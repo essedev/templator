@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Referrer-Policy for referrer information control
   - Permissions-Policy to disable unused browser features
 
+### Changed
+
+- Migrated from `next lint` to ESLint CLI for future Next.js 16 compatibility
+- Updated ESLint configuration to exclude build artifacts (.open-next, .wrangler, drizzle)
+
 ## [0.1.0] - 2025-10-10
 
 ### Added

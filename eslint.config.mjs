@@ -9,15 +9,25 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  {
-    rules: {
-      // Disable unescaped entities rule - apostrophes are safe in JSX text
-      // and essential for multilingual content (Italian, French, etc.)
-      "react/no-unescaped-entities": "off",
-    },
+const eslintConfig = [{
+  ignores: [
+    "node_modules/**",
+    ".next/**",
+    ".open-next/**",
+    ".wrangler/**",
+    "out/**",
+    "build/**",
+    "drizzle/**",
+    "next-env.d.ts",
+    "cloudflare-env.d.ts",
+    "tsconfig.tsbuildinfo"
+  ]
+}, ...compat.extends("next/core-web-vitals", "next/typescript"), {
+  rules: {
+    // Disable unescaped entities rule - apostrophes are safe in JSX text
+    // and essential for multilingual content (Italian, French, etc.)
+    "react/no-unescaped-entities": "off",
   },
-];
+}];
 
 export default eslintConfig;
