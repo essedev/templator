@@ -16,3 +16,6 @@ out
 
 # Drizzle
 drizzle
+
+# TypeScript
+*.tsbuildinfo
