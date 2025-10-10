@@ -165,75 +165,62 @@ AI-first Next.js template for rapid development with authentication, database, a
 
 ### 1. Clone & Install
 
-\`\`\`bash
-
+```bash
 # Using this template on GitHub (recommended)
-
 # Click "Use this template" button at the top of this repo
 
 # Or clone directly
-
 git clone https://github.com/yourusername/templator.git
 cd templator
 pnpm install
-\`\`\`
+```
 
 ### 2. Environment Setup
 
-Create \`.env\` file:
+Create `.env` file:
 
-\`\`\`bash
-
+```bash
 # Database (Neon PostgreSQL)
-
 DATABASE_URL="postgresql://..."
 
 # NextAuth
-
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="run: openssl rand -base64 32"
 
 # Email (optional - mock by default)
-
 ADMIN_EMAIL="admin@yourdomain.com"
-
 # RESEND_API_KEY="re_xxxxx" # Uncomment to enable real emails
-
-\`\`\`
+```
 
 Generate NextAuth secret:
-\`\`\`bash
+```bash
 openssl rand -base64 32
-\`\`\`
+```
 
 ### 3. Database Setup
 
-\`\`\`bash
-
+```bash
 # Generate migration
-
 pnpm db:generate
 
 # Push to database
-
 pnpm db:push
 
 # Open Drizzle Studio (optional)
-
 pnpm db:studio
-\`\`\`
+```
 
 ### 4. Run Development Server
 
-\`\`\`bash
+```bash
 pnpm dev
-\`\`\`
+```
 
 Open [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
-\`\`\`
+```
 src/
 ├── app/
 │ ├── (routes)/ # Page routes
@@ -264,37 +251,32 @@ src/
 │ └── index.ts # Database client
 ├── hooks/ # Custom React hooks
 └── types/ # TypeScript types (NextAuth extensions)
-\`\`\`
+```
 
 ## Available Scripts
 
-\`\`\`bash
-
+```bash
 # Development
-
-pnpm dev # Start dev server with Turbopack
-pnpm build # Production build
-pnpm start # Start production server
+pnpm dev              # Start dev server with Turbopack
+pnpm build            # Production build
+pnpm start            # Start production server
 
 # Code Quality
-
-pnpm lint # Run ESLint
-pnpm format # Format code with Prettier
-pnpm format:check # Check code formatting
-pnpm typecheck # TypeScript type checking
+pnpm lint             # Run ESLint
+pnpm format           # Format code with Prettier
+pnpm format:check     # Check code formatting
+pnpm typecheck        # TypeScript type checking
 
 # Database
-
-pnpm db:generate # Generate migrations
-pnpm db:push # Push schema to database
-pnpm db:studio # Open Drizzle Studio
+pnpm db:generate      # Generate migrations
+pnpm db:push          # Push schema to database
+pnpm db:studio        # Open Drizzle Studio
 
 # Cloudflare
-
-pnpm deploy # Deploy to Cloudflare
-pnpm preview # Preview Cloudflare build
-pnpm cf-typegen # Generate Cloudflare types
-\`\`\`
+pnpm deploy           # Deploy to Cloudflare
+pnpm preview          # Preview Cloudflare build
+pnpm cf-typegen       # Generate Cloudflare types
+```
 
 ## 📧 Email Configuration
 
@@ -303,12 +285,12 @@ By default, emails are mocked (logged to console). To enable real emails with Re
 > **Note:** Resend is already installed in this template.
 
 1. Get API key from [Resend](https://resend.com)
-2. Add to \`.env\`:
-   \`\`\`bash
+2. Add to `.env`:
+   ```bash
    RESEND_API_KEY="re_xxxxx"
    EMAIL_FROM="noreply@yourdomain.com"
    EMAIL_PROVIDER="resend"
-   \`\`\`
+   ```
 3. Verify your domain in Resend dashboard (required for production)
 
 See [`docs/EMAIL_SYSTEM.md`](docs/EMAIL_SYSTEM.md) for detailed configuration and templates guide.
@@ -326,108 +308,100 @@ See [`docs/EMAIL_SYSTEM.md`](docs/EMAIL_SYSTEM.md) for detailed configuration an
 
 **First-time setup:**
 
-\`\`\`bash
-
+```bash
 # Login to Cloudflare
-
 pnpm wrangler login
 
 # Set secrets (don't use plain env vars for sensitive data)
-
 pnpm wrangler secret put DATABASE_URL
 pnpm wrangler secret put NEXTAUTH_SECRET
-\`\`\`
+```
 
 **Deploy:**
 
-\`\`\`bash
-
+```bash
 # Build and deploy to production
-
 pnpm deploy
 
 # Or preview before deploying
-
 pnpm preview
-\`\`\`
+```
 
 **Configuration:**
 
-- Edit \`wrangler.jsonc\` for worker settings
-- OpenNext config in \`open-next.config.ts\`
+- Edit `wrangler.jsonc` for worker settings
+- OpenNext config in `open-next.config.ts`
 
 ### Environment Variables
 
-**Local development (\`.env\`):**
-\`\`\`bash
+**Local development (`.env`):**
+```bash
 DATABASE_URL="postgresql://..."
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="..."
 ADMIN_EMAIL="admin@yourdomain.com"
-\`\`\`
+```
 
 **Production (Cloudflare):**
 
 Set secrets via Wrangler CLI (recommended):
-\`\`\`bash
+```bash
 pnpm wrangler secret put DATABASE_URL
 pnpm wrangler secret put NEXTAUTH_SECRET
 pnpm wrangler secret put ADMIN_EMAIL
-\`\`\`
+```
 
 Or set in Cloudflare dashboard → Workers → Settings → Variables and Secrets
 
 **Required:**
 
-- \`DATABASE_URL\` - Neon connection string
-- \`NEXTAUTH_URL\` - Your production URL (e.g., https://yourapp.workers.dev)
-- \`NEXTAUTH_SECRET\` - Same as local (use \`openssl rand -base64 32\`)
+- `DATABASE_URL` - Neon connection string
+- `NEXTAUTH_URL` - Your production URL (e.g., https://yourapp.workers.dev)
+- `NEXTAUTH_SECRET` - Same as local (use `openssl rand -base64 32`)
 
 **Optional:**
 
-- \`ADMIN_EMAIL\` - For contact form notifications
-- \`RESEND_API_KEY\` - If using real email (instead of mock)
+- `ADMIN_EMAIL` - For contact form notifications
+- `RESEND_API_KEY` - If using real email (instead of mock)
 
 ## Development Workflow
 
 1. **Add new feature**:
-   \`\`\`bash
+   ```bash
    mkdir -p src/features/my-feature
-
    # Create: schema.ts, actions.ts, MyFeatureForm.tsx, README.md
-
-   \`\`\`
+   ```
 
 2. **Add database table**:
-   - Edit \`src/db/schema.ts\`
-   - Run \`pnpm db:generate\`
-   - Run \`pnpm db:push\`
+   - Edit `src/db/schema.ts`
+   - Run `pnpm db:generate`
+   - Run `pnpm db:push`
 
 3. **Add new page**:
-   - Create in \`src/app/my-page/page.tsx\`
-   - Add link to \`Navbar.tsx\`
+   - Create in `src/app/my-page/page.tsx`
+   - Add link to `Navbar.tsx`
 
 4. **Validation loop** (before commit):
-   \`\`\`bash
-   pnpm format # Format code
-   pnpm lint # Check linting
-   pnpm typecheck # Check types
-   pnpm build # Test build
-   \`\`\`
+   ```bash
+   pnpm format      # Format code
+   pnpm lint        # Check linting
+   pnpm typecheck   # Check types
+   pnpm build       # Test build
+   ```
 
 ## Documentation
 
-See \`docs/\` folder for detailed guides:
+See `docs/` folder for detailed guides:
 
-- \`RBAC.md\` - Role-Based Access Control system (user/editor/admin)
-- \`STACK.md\` - Technology choices and rationale (Drizzle, NextAuth, Cloudflare)
-- \`SETUP.md\` - Detailed setup instructions from scratch
-- \`ARCHITECTURE.md\` - Project structure and conventions
-- \`COMPONENTS.md\` - Complete components reference (UI, layout, auth, dashboard)
-- \`EXAMPLES.md\` - Complete code examples with Drizzle + NextAuth
-- \`SCRIPTS.md\` - Available npm scripts and workflows
-- \`AI_WORKFLOW.md\` - Working with AI assistants
-- \`recipes/\` - Common feature patterns
+- `RBAC.md` - Role-Based Access Control system (user/editor/admin)
+- `STACK.md` - Technology choices and rationale (Drizzle, NextAuth, Cloudflare)
+- `SETUP.md` - Detailed setup instructions from scratch
+- `ARCHITECTURE.md` - Project structure and conventions
+- `COMPONENTS.md` - Complete components reference (UI, layout, auth, dashboard)
+- `EXAMPLES.md` - Complete code examples with Drizzle + NextAuth
+- `SCRIPTS.md` - Available npm scripts and workflows
+- `AI_WORKFLOW.md` - Working with AI assistants
+- `recipes/` - Common feature patterns
 
 ## 📊 Comparison
 
