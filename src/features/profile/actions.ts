@@ -5,20 +5,13 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-/**
- * Dati per l'aggiornamento del profilo
- */
-export interface UpdateProfileData {
-  name: string;
-  email: string;
-}
+import { updateProfileSchema } from "./schema";
 
 /**
  * Server action per aggiornare il profilo dell'utente.
  * Ogni utente autenticato può aggiornare solo il proprio profilo.
  */
-export async function updateProfile(data: UpdateProfileData) {
+export async function updateProfile(input: unknown) {
   const session = await auth();
 
   // Verifica che l'utente sia autenticato
@@ -26,20 +19,8 @@ export async function updateProfile(data: UpdateProfileData) {
     throw new Error("Unauthorized: You must be logged in to update your profile");
   }
 
-  // Validazione input
-  if (!data.name?.trim()) {
-    throw new Error("Name is required");
-  }
-
-  if (!data.email?.trim()) {
-    throw new Error("Email is required");
-  }
-
-  // Validazione email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
-    throw new Error("Invalid email format");
-  }
+  // Validazione input con Zod schema
+  const data = updateProfileSchema.parse(input);
 
   try {
     // Verifica se l'email è già in uso da un altro utente
@@ -53,8 +34,8 @@ export async function updateProfile(data: UpdateProfileData) {
     await db
       .update(users)
       .set({
-        name: data.name.trim(),
-        email: data.email.trim(),
+        name: data.name,
+        email: data.email,
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));

@@ -7,15 +7,16 @@ import { PostForm } from "@/features/blog/PostForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface EditPostPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
  * Dashboard page per modificare blog post esistente.
  */
 export default async function EditPostPage({ params }: EditPostPageProps) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -23,7 +24,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   }
 
   // Fetch post
-  const [post] = await db.select().from(posts).where(eq(posts.id, params.id)).limit(1);
+  const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
 
   if (!post) {
     notFound();

@@ -3,49 +3,80 @@
 import { db } from "@/db";
 import { contactMessages } from "@/db/schema";
 import { contactSchema } from "./schema";
-import { sendEmail, contactFormEmailTemplate } from "@/lib/email";
+import { sendEmail } from "@/lib/emails/send";
+import { ContactAutoReplyTemplate } from "@/lib/emails/templates/contact/auto-reply";
+import { ContactAdminNotificationTemplate } from "@/lib/emails/templates/contact/admin-notification";
+import { emailConfig } from "@/lib/emails/config";
 
 /**
- * Server Action: salva messaggio di contatto e notifica admin.
+ * Server Action: save contact message and send notifications.
  *
  * Flow:
- * 1. Valida input con Zod
- * 2. Salva messaggio su database
- * 3. Invia email notifica all'admin (se configurata)
+ * 1. Validate input with Zod
+ * 2. Save message to database
+ * 3. Send auto-reply to user
+ * 4. Send notification to admin
  *
- * @param input - Dati form validati con Zod
+ * @param input - Form data validated with Zod
  * @returns Success state
  */
 export async function sendContactMessage(input: unknown) {
   try {
-    // 1. Valida input
+    // 1. Validate input
     const data = contactSchema.parse(input);
 
-    // 2. Salva su database
-    await db.insert(contactMessages).values({
-      name: data.name,
-      email: data.email,
-      message: data.message,
-    });
+    // 2. Save to database
+    const [savedMessage] = await db
+      .insert(contactMessages)
+      .values({
+        name: data.name,
+        email: data.email,
+        message: data.message,
+      })
+      .returning();
 
-    // 3. Notifica admin (mock by default, vedi src/lib/email.ts)
+    // 3. Send auto-reply to user
     try {
-      const emailPayload = contactFormEmailTemplate(data);
-      await sendEmail(emailPayload);
+      await sendEmail({
+        to: data.email,
+        subject: "We received your message",
+        react: ContactAutoReplyTemplate({
+          name: data.name,
+        }),
+      });
     } catch (emailError) {
-      // Non bloccare se email fallisce
-      console.error("Email notification failed:", emailError);
+      // Don't block if email fails
+      console.error("Auto-reply email failed:", emailError);
+    }
+
+    // 4. Send notification to admin
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
+      await sendEmail({
+        to: adminEmail,
+        subject: `New contact message from ${data.name}`,
+        react: ContactAdminNotificationTemplate({
+          name: data.name,
+          email: data.email,
+          message: data.message,
+          submittedAt: savedMessage.createdAt,
+        }),
+        replyTo: data.email,
+      });
+    } catch (emailError) {
+      // Don't block if email fails
+      console.error("Admin notification email failed:", emailError);
     }
 
     return {
       success: true,
-      message: "Messaggio inviato con successo!",
+      message: "Message sent successfully!",
     };
   } catch (error) {
     console.error("Contact form error:", error);
     return {
       success: false,
-      error: "Errore durante l'invio. Riprova più tardi.",
+      error: "An error occurred while sending your message. Please try again later.",
     };
   }
 }

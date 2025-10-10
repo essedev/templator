@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    // Unoptimized images required for Cloudflare Workers
+    // Cloudflare Workers don't support Next.js automatic image optimization
+    // Use Cloudflare Images or external CDN for production optimization
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

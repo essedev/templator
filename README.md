@@ -1,6 +1,43 @@
 # Templator
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
+
 AI-first Next.js template for rapid development with authentication, database, and Cloudflare Workers deployment.
+
+⭐ **Star this repo** if you find it useful!
+
+## 📋 Table of Contents
+
+- [Who Is This For?](#-who-is-this-for)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Available Scripts](#available-scripts)
+- [Email Configuration](#email-configuration)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Comparison](#-comparison)
+- [Contributing](#-contributing)
+- [License](#license)
+
+## 🎯 Who Is This For?
+
+**Perfect for:**
+
+- 🚀 **Startup founders** building MVPs rapidly with AI assistance
+- 💼 **Indie hackers** needing auth + RBAC + email flows out-of-the-box
+- 🤖 **AI-first developers** using Cursor, Claude Code, GitHub Copilot
+- 🎓 **Learners** exploring modern Next.js App Router + Drizzle architecture
+
+**Not ideal for:**
+
+- Teams requiring extensive testing infrastructure from day 1
+- Projects with highly custom authentication requirements
+- Applications needing complex multi-tenancy from the start
 
 ## Tech Stack
 
@@ -30,36 +67,80 @@ AI-first Next.js template for rapid development with authentication, database, a
 - **Prettier** - Code formatting
 - **React Hook Form + Zod** - Type-safe form validation
 
-## Features
+## ✨ Features
 
-✅ **Authentication & RBAC**
+<table>
+<tr>
+<td width="50%">
 
-- Email/password with NextAuth v5
-- Role-Based Access Control (user/editor/admin)
-- Protected routes with middleware
-- Session management with JWT
+### 🔐 Authentication & RBAC
 
-✅ **Database**
+- ✅ Email/password with NextAuth v5
+- ✅ Email verification & password reset
+- ✅ Role-Based Access Control (user/editor/admin)
+- ✅ Protected routes with middleware
+- ✅ Session management with JWT
 
-- Drizzle ORM with Neon PostgreSQL
-- Type-safe queries
-- Migrations with Drizzle Kit
+</td>
+<td width="50%">
 
-✅ **UI Components**
+### 📧 Email System
 
-- shadcn/ui components library
-- Dark mode support (next-themes)
-- Responsive design
-- Toast notifications (Sonner)
+- ✅ React Email templates
+- ✅ Mock mode for development
+- ✅ Resend integration for production
+- ✅ Transactional email flows
+- ✅ Password reset & verification
 
-✅ **Feature Modules**
+</td>
+</tr>
+<tr>
+<td>
 
-- Contact form with Server Actions
-- Newsletter signup with unsubscribe management
-- Blog system with draft/publish workflow
-- Profile management (all users)
-- User management (admin only - role assignment)
-- Email notifications (mock by default)
+### 🗄️ Database
+
+- ✅ Drizzle ORM with Neon PostgreSQL
+- ✅ Type-safe queries with TypeScript
+- ✅ Migrations with Drizzle Kit
+- ✅ Edge-compatible architecture
+
+</td>
+<td>
+
+### 🎨 UI Components
+
+- ✅ shadcn/ui components library
+- ✅ Dark mode support (next-themes)
+- ✅ Responsive design
+- ✅ Toast notifications (Sonner)
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 📝 Feature Modules
+
+- ✅ Contact form with Server Actions
+- ✅ Newsletter with double opt-in
+- ✅ Blog system (draft/publish workflow)
+- ✅ Profile management
+- ✅ User management (admin only)
+
+</td>
+<td>
+
+### 🚀 Developer Experience
+
+- ✅ AI-optimized architecture
+- ✅ Type-safe end-to-end
+- ✅ Hot reload with Turbopack
+- ✅ ESLint + Prettier configured
+- ✅ Comprehensive documentation
+
+</td>
+</tr>
+</table>
 
 ✅ **Pages**
 
@@ -85,7 +166,14 @@ AI-first Next.js template for rapid development with authentication, database, a
 ### 1. Clone & Install
 
 \`\`\`bash
-git clone <your-repo>
+
+# Using this template on GitHub (recommended)
+
+# Click "Use this template" button at the top of this repo
+
+# Or clone directly
+
+git clone https://github.com/yourusername/templator.git
 cd templator
 pnpm install
 \`\`\`
@@ -208,16 +296,22 @@ pnpm preview # Preview Cloudflare build
 pnpm cf-typegen # Generate Cloudflare types
 \`\`\`
 
-## Email Configuration
+## 📧 Email Configuration
 
-By default, emails are mocked (logged to console). To enable real emails:
+By default, emails are mocked (logged to console). To enable real emails with Resend:
 
-1. Install Resend: \`pnpm add resend\`
-2. Get API key from [Resend](https://resend.com)
-3. Add to \`.env\`: \`RESEND_API_KEY=re_xxxxx\`
-4. Uncomment code in \`src/lib/email.ts\`
+> **Note:** Resend is already installed in this template.
 
-See \`src/lib/email.ts\` for detailed instructions.
+1. Get API key from [Resend](https://resend.com)
+2. Add to \`.env\`:
+   \`\`\`bash
+   RESEND_API_KEY="re_xxxxx"
+   EMAIL_FROM="noreply@yourdomain.com"
+   EMAIL_PROVIDER="resend"
+   \`\`\`
+3. Verify your domain in Resend dashboard (required for production)
+
+See [`docs/EMAIL_SYSTEM.md`](docs/EMAIL_SYSTEM.md) for detailed configuration and templates guide.
 
 ## Deployment
 
@@ -329,10 +423,28 @@ See \`docs/\` folder for detailed guides:
 - \`STACK.md\` - Technology choices and rationale (Drizzle, NextAuth, Cloudflare)
 - \`SETUP.md\` - Detailed setup instructions from scratch
 - \`ARCHITECTURE.md\` - Project structure and conventions
+- \`COMPONENTS.md\` - Complete components reference (UI, layout, auth, dashboard)
 - \`EXAMPLES.md\` - Complete code examples with Drizzle + NextAuth
 - \`SCRIPTS.md\` - Available npm scripts and workflows
 - \`AI_WORKFLOW.md\` - Working with AI assistants
 - \`recipes/\` - Common feature patterns
+
+## 📊 Comparison
+
+How does Templator compare to other Next.js starters?
+
+| Feature                | Templator                     | create-t3-app     | Next.js SaaS Starter |
+| ---------------------- | ----------------------------- | ----------------- | -------------------- |
+| **Auth System**        | ✅ NextAuth v5 + RBAC         | ✅ NextAuth       | ⚠️ Custom            |
+| **Email Verification** | ✅ Built-in                   | ❌ Manual setup   | ❌ Manual setup      |
+| **Password Reset**     | ✅ Built-in                   | ❌ Manual setup   | ❌ Manual setup      |
+| **Role-Based Access**  | ✅ 3-tier RBAC                | ❌ DIY            | ❌ DIY               |
+| **Email Templates**    | ✅ React Email                | ❌                | ❌                   |
+| **Edge Deployment**    | ✅ Cloudflare Workers         | ⚠️ Vercel-focused | ⚠️ Vercel-focused    |
+| **AI-Optimized**       | ✅ Feature-based architecture | ❌                | ❌                   |
+| **Documentation**      | ✅ Comprehensive docs/        | ⚠️ Basic          | ⚠️ Basic             |
+| **Database ORM**       | Drizzle                       | Drizzle/Prisma    | Prisma               |
+| **Blog System**        | ✅ Built-in                   | ❌                | ❌                   |
 
 ## Tech Stack Details
 
@@ -356,6 +468,37 @@ See \`docs/\` folder for detailed guides:
 - Zero cold starts
 - Generous free tier (100k req/day)
 - Perfect with Neon PostgreSQL
+
+## 🤝 Contributing
+
+Contributions are welcome! This template is designed to be a starting point that grows with the community.
+
+### How to Contribute
+
+1. **Fork the repository**
+2. **Create your feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes** following the existing code style and conventions
+4. **Test your changes** (`pnpm format && pnpm lint && pnpm typecheck && pnpm build`)
+5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+6. **Push to the branch** (`git push origin feature/amazing-feature`)
+7. **Open a Pull Request**
+
+### Guidelines
+
+- Follow the existing architecture and naming conventions
+- Update documentation if you're adding new features
+- Add examples in `docs/EXAMPLES.md` if relevant
+- Keep features modular and self-contained
+- Write clear commit messages
+
+### Ideas for Contributions
+
+- 📝 Additional feature modules (e.g., comments, analytics, payments)
+- 🎨 New shadcn/ui component examples
+- 📧 Additional email templates
+- 📚 More recipes in `docs/recipes/`
+- 🐛 Bug fixes and improvements
+- 🌐 Internationalization support
 
 ## License
 

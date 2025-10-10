@@ -27,6 +27,7 @@ await updateProfile({
 ```
 
 **Validation:**
+
 - Uses `profileSchema` from `schema.ts`
 - Only updates fields provided
 - Cannot change email (requires verification flow)
@@ -117,10 +118,7 @@ export const profileSchema = z.object({
 ### Add password change
 
 ```typescript
-export async function changePassword(data: {
-  currentPassword: string;
-  newPassword: string;
-}) {
+export async function changePassword(data: { currentPassword: string; newPassword: string }) {
   const session = await auth();
   // Verify current password
   // Hash and update new password

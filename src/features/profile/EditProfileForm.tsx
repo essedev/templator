@@ -10,15 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface EditProfileFormProps {
-  userId: string;
   initialName: string;
   initialEmail: string;
 }
 
 /**
  * Client component per modificare il profilo utente.
+ * L'ID utente viene ottenuto dalla sessione nel server action.
  */
-export function EditProfileForm({ userId, initialName, initialEmail }: EditProfileFormProps) {
+export function EditProfileForm({ initialName, initialEmail }: EditProfileFormProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

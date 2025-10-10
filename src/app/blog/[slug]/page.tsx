@@ -3,6 +3,7 @@ import { posts, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Section } from "@/components/common";
@@ -14,16 +15,17 @@ import { Section } from "@/components/common";
 export const revalidate = 60;
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps) {
+  const { slug } = await params;
   const [post] = await db
     .select()
     .from(posts)
-    .where(and(eq(posts.slug, params.slug), eq(posts.published, true)))
+    .where(and(eq(posts.slug, slug), eq(posts.published, true)))
     .limit(1);
 
   if (!post) {
@@ -39,6 +41,8 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params;
+
   // Fetch post con join su author
   const [postData] = await db
     .select({
@@ -47,7 +51,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     })
     .from(posts)
     .leftJoin(users, eq(posts.authorId, users.id))
-    .where(and(eq(posts.slug, params.slug), eq(posts.published, true)))
+    .where(and(eq(posts.slug, slug), eq(posts.published, true)))
     .limit(1);
 
   if (!postData) {
@@ -104,8 +108,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         {/* Cover image */}
         {post.coverImage && (
-          <div className="mb-8">
-            <img src={post.coverImage} alt={post.title} className="w-full rounded-lg" />
+          <div className="mb-8 relative w-full aspect-video">
+            <Image
+              src={post.coverImage}
+              alt={post.title}
+              fill
+              className="object-cover rounded-lg"
+              sizes="(max-width: 768px) 100vw, 800px"
+              unoptimized
+            />
           </div>
         )}
 

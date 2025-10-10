@@ -30,6 +30,7 @@ All components are from [shadcn/ui](https://ui.shadcn.com) and fully customizabl
 **Location:** `src/components/layout/Navbar.tsx`
 
 Main navigation with:
+
 - Logo/brand
 - Navigation links
 - Theme toggle
@@ -41,6 +42,7 @@ Main navigation with:
 **Location:** `src/components/layout/Footer.tsx`
 
 Site footer with:
+
 - Links sections
 - Copyright
 - Newsletter signup (optional)
@@ -88,6 +90,7 @@ import { RoleGateClient } from "@/components/auth";
 **Location:** `src/components/dashboard/DashboardNav.tsx`
 
 Dynamic navigation that adapts to user role:
+
 - All users: Overview, Profile
 - Editor/Admin: Blog, Newsletter, Contacts
 - Admin only: Users
@@ -142,6 +145,7 @@ Components organized by feature in `src/features/`:
 ## Styling
 
 All components use:
+
 - **Tailwind CSS** for styling
 - **CSS variables** for theming (defined in `globals.css`)
 - **cn()** utility from `lib/utils.ts` for class merging
@@ -158,6 +162,7 @@ pnpm dlx shadcn@latest add [component-name]
 ### Custom Component
 
 Follow existing patterns:
+
 1. Use TypeScript interfaces for props
 2. Export from component file directly
 3. Use `cn()` for className merging

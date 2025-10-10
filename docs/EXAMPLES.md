@@ -21,7 +21,15 @@ export const db = drizzle(sql);
 **File: `src/db/schema.ts`**
 
 ```typescript
-import { pgTable, text, timestamp, integer, primaryKey, boolean, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  primaryKey,
+  boolean,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 
 // ============================================
 // AUTH TABLES (richiesti da NextAuth)

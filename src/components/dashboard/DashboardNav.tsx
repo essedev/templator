@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, type Permission } from "@/lib/permissions";
 import {
   LayoutDashboard,
   FileText,
@@ -15,7 +15,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  permission?: string;
+  permission?: Permission;
 }
 
 const navItems: NavItem[] = [
@@ -73,7 +73,7 @@ export async function DashboardNav() {
   // Filtra i nav items in base ai permessi
   const allowedNavItems = navItems.filter((item) => {
     if (!item.permission) return true; // Item senza permessi è visibile a tutti
-    return hasPermission(userRole, item.permission as any);
+    return hasPermission(userRole, item.permission);
   });
 
   return (

@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { registerSchema } from "./schema";
+import { hashPassword } from "@/lib/password";
+import { sendVerificationEmail } from "./email-actions";
 
 /**
  * Server Action: registra nuovo utente.
@@ -30,20 +32,26 @@ export async function registerUser(input: unknown) {
       };
     }
 
+    // Hash password con PBKDF2 (Web Crypto API - compatible with Cloudflare Workers)
+    const hashedPassword = await hashPassword(data.password);
+
     // Crea nuovo utente
-    // NOTA: In produzione, usa bcrypt per hashare la password
     const [user] = await db
       .insert(users)
       .values({
         name: data.name,
         email: data.email,
-        password: data.password, // TODO: hash con bcrypt
+        password: hashedPassword,
       })
       .returning();
+
+    // Invia email di verifica
+    await sendVerificationEmail(user.id);
 
     return {
       success: true,
       userId: user.id,
+      message: "Registration successful! Please check your email to verify your account.",
     };
   } catch (error) {
     console.error("Registration error:", error);

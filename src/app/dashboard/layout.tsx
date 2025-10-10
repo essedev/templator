@@ -7,13 +7,7 @@ import { Separator } from "@/components/ui/separator";
  * Dashboard layout - protegge tutte le route /dashboard/*
  * Richiede autenticazione e mostra navigation basata sui permessi.
  */
-export default async function DashboardLayout({
-  children,
-  searchParams,
-}: {
-  children: React.ReactNode;
-  searchParams?: { error?: string };
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
   if (!session?.user) {

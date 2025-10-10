@@ -1,11 +1,13 @@
 "use server";
 
 import { db } from "@/db";
-import { posts } from "@/db/schema";
+import { posts, users } from "@/db/schema";
 import { createPostSchema, updatePostSchema } from "./schema";
 import { auth } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { sendEmail } from "@/lib/emails/send";
+import { PostPublishedTemplate } from "@/lib/emails/templates/blog/post-published";
 
 /**
  * Server Action: Crea un nuovo blog post.
@@ -65,6 +67,11 @@ export async function updatePost(postId: string, input: unknown) {
   // Valida input
   const data = updatePostSchema.parse(input);
 
+  // Check if post is being published for the first time
+  const wasUnpublished = !existingPost.published;
+  const isNowPublished = data.published === true;
+  const justPublished = wasUnpublished && isNowPublished;
+
   // Update post
   const [updatedPost] = await db
     .update(posts)
@@ -79,6 +86,38 @@ export async function updatePost(postId: string, input: unknown) {
     })
     .where(eq(posts.id, postId))
     .returning();
+
+  // Send email notification if post was just published
+  if (justPublished) {
+    try {
+      // Get author info
+      const [author] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, existingPost.authorId))
+        .limit(1);
+
+      if (author?.email) {
+        const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
+        const postUrl = `${NEXTAUTH_URL}/blog/${updatedPost.slug}`;
+
+        await sendEmail({
+          to: author.email,
+          subject: "Your blog post has been published!",
+          react: PostPublishedTemplate({
+            authorName: author.name || "User",
+            postTitle: updatedPost.title,
+            postUrl,
+            publishedBy: session.user.name || session.user.email || "Admin",
+            publishedAt: updatedPost.publishedAt || new Date(),
+          }),
+        });
+      }
+    } catch (emailError) {
+      // Don't block post update if email fails
+      console.error("Post published notification email failed:", emailError);
+    }
+  }
 
   // Revalidate cache
   revalidatePath("/blog");

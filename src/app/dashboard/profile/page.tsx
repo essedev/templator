@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EditProfileForm } from "@/features/profile/EditProfileForm";
 import { PageHeader } from "@/components/common";
@@ -33,7 +33,7 @@ export default async function ProfilePage() {
       <PageHeader title="Profile" description="View and manage your account information" />
 
       {/* Profile Information - Editable */}
-      <EditProfileForm userId={user.id} initialName={user.name ?? ""} initialEmail={user.email} />
+      <EditProfileForm initialName={user.name ?? ""} initialEmail={user.email} />
 
       {/* Account Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

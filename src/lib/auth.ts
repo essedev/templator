@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { verifyPassword } from "@/lib/password";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),
@@ -32,8 +33,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        // Simple password check (in production, use proper hashing)
-        const passwordMatch = user.password === credentials.password;
+        // Verify password with PBKDF2 (Web Crypto API)
+        const passwordMatch = await verifyPassword(credentials.password as string, user.password);
 
         if (!passwordMatch) {
           return null;

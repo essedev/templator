@@ -25,6 +25,7 @@ await updateUserRole("user-id", "editor");
 ```
 
 **Permissions:**
+
 - Caller must be admin
 - Cannot change own role
 - Valid roles: `user`, `editor`, `admin`
@@ -40,6 +41,7 @@ await deleteUser("user-id");
 ```
 
 **Permissions:**
+
 - Caller must be admin
 - Cannot delete self
 

@@ -5,13 +5,15 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { Role } from "@/lib/permissions";
+import { updateUserRoleSchema } from "./schema";
+import { sendEmail } from "@/lib/emails/send";
+import { RoleChangedTemplate } from "@/lib/emails/templates/users/role-changed";
 
 /**
  * Server action per aggiornare il ruolo di un utente.
  * Solo gli admin possono eseguire questa azione.
  */
-export async function updateUserRole(userId: string, newRole: Role) {
+export async function updateUserRole(userId: string, role: string) {
   const session = await auth();
 
   // Verifica che l'utente sia autenticato e sia admin
@@ -19,14 +21,46 @@ export async function updateUserRole(userId: string, newRole: Role) {
     throw new Error("Unauthorized: Only admins can update user roles");
   }
 
+  // Validazione input con Zod schema
+  const data = updateUserRoleSchema.parse({ userId, role });
+
   // Non permettere all'admin di modificare il proprio ruolo
-  if (session.user.id === userId) {
+  if (session.user.id === data.userId) {
     throw new Error("You cannot change your own role");
   }
 
   try {
+    // Get user's current info before update
+    const [targetUser] = await db.select().from(users).where(eq(users.id, data.userId)).limit(1);
+
+    if (!targetUser) {
+      throw new Error("User not found");
+    }
+
+    const oldRole = targetUser.role;
+
     // Aggiorna il ruolo dell'utente
-    await db.update(users).set({ role: newRole }).where(eq(users.id, userId));
+    await db.update(users).set({ role: data.role }).where(eq(users.id, data.userId));
+
+    // Send notification email to the user
+    if (targetUser.email) {
+      try {
+        await sendEmail({
+          to: targetUser.email,
+          subject: "Your account role has been updated",
+          react: RoleChangedTemplate({
+            name: targetUser.name || "User",
+            oldRole: oldRole,
+            newRole: data.role,
+            changedBy: session.user.name || session.user.email || "Admin",
+            changedAt: new Date(),
+          }),
+        });
+      } catch (emailError) {
+        // Don't block role update if email fails
+        console.error("Role change notification email failed:", emailError);
+      }
+    }
 
     // Revalida la pagina
     revalidatePath("/dashboard/users");
