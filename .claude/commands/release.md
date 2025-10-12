@@ -9,7 +9,7 @@ Execute these steps autonomously:
    - If empty: warn user there are no changes to release and STOP
    - If doesn't exist: inform user to run `/changelog` first and STOP
    - Read package.json to get current version
-   - Check git status to ensure working directory is clean
+   - Check git status to see what files are modified (will be included in release commit)
 
 2. **Determine next version automatically**:
    - Parse current version from package.json
@@ -36,8 +36,10 @@ Execute these steps autonomously:
    - Show all files that will be modified
 
 5. **Create and publish release**:
-   - Run `git add CHANGELOG.md package.json package-lock.json`
-   - Run `git commit -m "chore: release vx.y.z"`
+   - Run `git add .` to stage ALL modified files (including CHANGELOG.md, package.json, and any other changes)
+   - Run `git commit` with a comprehensive message:
+     - If only CHANGELOG.md and package.json changed: "chore: release vx.y.z"
+     - If other files changed too: Include a detailed commit message listing all changes with the Claude Code footer
    - Run `git tag -a vx.y.z -m "Release x.y.z"`
    - Run `git push && git push --tags`
    - Confirm success with commit SHA and tag name
