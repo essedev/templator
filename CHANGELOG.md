@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-12
+
+### Changed
+
+- **BREAKING**: Migrated authentication from NextAuth v5 to Better Auth v1
+  - Better edge compatibility with Cloudflare Workers
+  - Improved TypeScript support and developer experience
+  - Built-in email verification and password reset flows
+  - Custom PBKDF2 password hashing (100k iterations)
+  - Edge-compatible rate limiting with database storage
+- Updated all authentication-related pages and components to use Better Auth client
+- Refactored database schema to use Better Auth naming conventions (snake_case)
+- Enhanced RBAC system with Better Auth's custom fields
+- Simplified authentication middleware with Better Auth session handling
+- Updated all feature modules (auth, blog, contact, newsletter, profile, users) to work with Better Auth
+
+### Added
+
+- New authentication documentation:
+  - `docs/AUTHENTICATION.md` - Complete Better Auth implementation guide
+  - `docs/AUTHENTICATION_ADVANCED.md` - Advanced features and customization
+  - `docs/MIDDLEWARE.md` - Middleware and protected routes guide
+  - `docs/DEPLOYMENT.md` - Deployment configuration for Better Auth
+- Better Auth client (`src/lib/auth-client.ts`) for client-side authentication
+- Better Auth API route (`src/app/api/auth/[...all]/route.ts`)
+- Custom email templates for Better Auth (`src/lib/emails/auth-emails.ts`)
+- New RBAC helper (`src/lib/rbac.ts`) with Better Auth integration
+- Improved auth verification and password reset flows (searchParams-based)
+- Enhanced feature READMEs with Better Auth examples and best practices
+
+### Removed
+
+- NextAuth v5 and @auth/drizzle-adapter dependencies
+- Legacy NextAuth route (`src/app/api/auth/[...nextauth]/route.ts`)
+- Legacy NextAuth type definitions (`src/types/next-auth.d.ts`)
+- Legacy email actions file (`src/features/auth/email-actions.ts`)
+- Legacy token-based verification/reset routes (migrated to searchParams)
+- `docs/EXAMPLES.md` (content redistributed to feature READMEs)
+
+### Fixed
+
+- Edge runtime compatibility issues with authentication flows
+- Session handling in middleware for protected routes
+- Type safety improvements across authentication system
+
 ## [0.1.2] - 2025-10-10
 
 ### Added
@@ -107,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AI workflow guide
   - Recipe patterns
 
+[0.2.0]: https://github.com/yourusername/templator/releases/tag/v0.2.0
 [0.1.2]: https://github.com/yourusername/templator/releases/tag/v0.1.2
 [0.1.1]: https://github.com/yourusername/templator/releases/tag/v0.1.1
 [0.1.0]: https://github.com/yourusername/templator/releases/tag/v0.1.0
