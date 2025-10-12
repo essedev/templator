@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { contactMessages } from "@/db/schema";
+import { contactMessage } from "@/db/schema";
 import { contactSchema } from "./schema";
 import { sendEmail } from "@/lib/emails/send";
 import { ContactAutoReplyTemplate } from "@/lib/emails/templates/contact/auto-reply";
@@ -27,7 +27,7 @@ export async function sendContactMessage(input: unknown) {
 
     // 2. Save to database
     const [savedMessage] = await db
-      .insert(contactMessages)
+      .insert(contactMessage)
       .values({
         name: data.name,
         email: data.email,

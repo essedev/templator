@@ -17,13 +17,16 @@ Follow these steps:
    - If [Unreleased] section exists: Add entries there
    - If [Unreleased] section doesn't exist: Create it at the top of the changelog (after the header, before the first version)
    - Format:
+
      ```markdown
      ## [Unreleased]
 
      ### Added
+
      - New feature description
 
      ### Changed
+
      - Change description
      ```
 

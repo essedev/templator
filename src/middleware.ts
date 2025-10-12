@@ -1,56 +1,39 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { hasRole } from "@/lib/permissions";
-import type { Role } from "@/lib/permissions";
+import type { NextRequest } from "next/server";
 
 /**
- * Mappa delle route protette e ruoli richiesti.
- * Le route sono controllate in ordine, quindi metti le più specifiche prima.
+ * Route protette che richiedono autenticazione.
+ * La verifica RBAC dettagliata è gestita dai layout server components.
  */
-const PROTECTED_ROUTES: Record<string, Role[]> = {
-  "/dashboard/users": ["admin"],
-  "/dashboard/settings": ["admin"],
-  "/dashboard/blog": ["editor", "admin"],
-  "/dashboard/newsletter": ["editor", "admin"],
-  "/dashboard/contacts": ["editor", "admin"],
-  "/dashboard": ["user", "editor", "admin"], // Base: tutti gli utenti autenticati
-};
+const PROTECTED_ROUTES = ["/dashboard"];
 
 /**
- * Middleware RBAC (Role-Based Access Control).
- * Protegge le route in base al ruolo dell'utente.
+ * Middleware minimale per autenticazione.
+ * Edge Runtime compatible - verifica solo la presenza del cookie di sessione Better Auth.
+ *
+ * RBAC (Role-Based Access Control) è gestito nei layout server components,
+ * dove possiamo usare getSession() senza problemi di Edge Runtime.
  */
-export default auth((req) => {
+export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
-  const user = req.auth?.user;
 
-  // Verifica autenticazione e autorizzazione per route protette
-  for (const [route, allowedRoles] of Object.entries(PROTECTED_ROUTES)) {
-    if (path.startsWith(route)) {
-      // Se non autenticato, redirect a login
-      if (!user) {
-        const loginUrl = new URL("/login", req.url);
-        loginUrl.searchParams.set("callbackUrl", path);
-        return NextResponse.redirect(loginUrl);
-      }
+  // Verifica se la route richiede autenticazione
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => path.startsWith(route));
 
-      // Verifica se l'utente ha uno dei ruoli richiesti
-      const hasRequiredRole = allowedRoles.some((role) => hasRole(user.role, role));
+  if (isProtectedRoute) {
+    // Better Auth usa il cookie "better-auth.session_token"
+    const sessionToken = req.cookies.get("better-auth.session_token");
 
-      // Se non ha i permessi, redirect a dashboard base con errore
-      if (!hasRequiredRole) {
-        const dashboardUrl = new URL("/dashboard", req.url);
-        dashboardUrl.searchParams.set("error", "unauthorized");
-        return NextResponse.redirect(dashboardUrl);
-      }
-
-      // Ha i permessi, continua
-      break;
+    // Se non c'è il cookie di sessione, redirect a login
+    if (!sessionToken) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", path);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

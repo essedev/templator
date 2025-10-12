@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { Separator } from "@/components/ui/separator";
@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
  * Richiede autenticazione e mostra navigation basata sui permessi.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user) {
     redirect("/login");

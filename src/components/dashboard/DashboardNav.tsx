@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import {
   LayoutDashboard,
@@ -67,7 +67,7 @@ const navItems: NavItem[] = [
  * Mostra solo i link che l'utente ha permesso di vedere.
  */
 export async function DashboardNav() {
-  const session = await auth();
+  const session = await getSession();
   const userRole = session?.user?.role;
 
   // Filtra i nav items in base ai permessi

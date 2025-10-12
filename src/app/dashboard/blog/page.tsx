@@ -1,8 +1,7 @@
 import { db } from "@/db";
-import { posts } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { post } from "@/db/schema";
+import { requireAuth } from "@/lib/rbac";
 import { desc, eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,24 +10,21 @@ import { PageHeader } from "@/components/common";
 import { DeletePostButton } from "./DeletePostButton";
 
 /**
- * Dashboard blog management page.
+ * Dashboard blog management page (Editor/Admin only).
  * Lista tutti i post dell'utente corrente con CRUD operations.
  */
 export const dynamic = "force-dynamic"; // Sempre fresh data
 
 export default async function DashboardBlogPage() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+  // Richiede ruolo editor o admin
+  const session = await requireAuth(["editor", "admin"]);
 
   // Fetch tutti i post dell'utente
   const userPosts = await db
     .select()
-    .from(posts)
-    .where(eq(posts.authorId, session.user.id))
-    .orderBy(desc(posts.createdAt));
+    .from(post)
+    .where(eq(post.authorId, session.user.id))
+    .orderBy(desc(post.createdAt));
 
   return (
     <div>
@@ -53,44 +49,44 @@ export default async function DashboardBlogPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {userPosts.map((post) => (
-            <Card key={post.id}>
+          {userPosts.map((postItem) => (
+            <Card key={postItem.id}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <CardTitle>{post.title}</CardTitle>
-                      <Badge variant={post.published ? "default" : "secondary"}>
-                        {post.published ? "Published" : "Draft"}
+                      <CardTitle>{postItem.title}</CardTitle>
+                      <Badge variant={postItem.published ? "default" : "secondary"}>
+                        {postItem.published ? "Published" : "Draft"}
                       </Badge>
                     </div>
-                    {post.excerpt && <CardDescription>{post.excerpt}</CardDescription>}
+                    {postItem.excerpt && <CardDescription>{postItem.excerpt}</CardDescription>}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    <p>Created: {new Date(post.createdAt).toLocaleDateString("en-US")}</p>
-                    {post.publishedAt && (
-                      <p>Published: {new Date(post.publishedAt).toLocaleDateString("en-US")}</p>
+                    <p>Created: {new Date(postItem.createdAt).toLocaleDateString("en-US")}</p>
+                    {postItem.publishedAt && (
+                      <p>Published: {new Date(postItem.publishedAt).toLocaleDateString("en-US")}</p>
                     )}
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {post.published && (
-                      <Link href={`/blog/${post.slug}`}>
+                    {postItem.published && (
+                      <Link href={`/blog/${postItem.slug}`}>
                         <Button variant="outline" size="sm">
                           View
                         </Button>
                       </Link>
                     )}
-                    <Link href={`/dashboard/blog/${post.id}/edit`}>
+                    <Link href={`/dashboard/blog/${postItem.id}/edit`}>
                       <Button variant="outline" size="sm">
                         Edit
                       </Button>
                     </Link>
-                    <DeletePostButton postId={post.id} postTitle={post.title} />
+                    <DeletePostButton postId={postItem.id} postTitle={postItem.title} />
                   </div>
                 </div>
               </CardContent>

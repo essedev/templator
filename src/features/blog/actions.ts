@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { posts, users } from "@/db/schema";
+import { post, user } from "@/db/schema";
 import { createPostSchema, updatePostSchema } from "./schema";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/emails/send";
@@ -17,7 +17,7 @@ import { PostPublishedTemplate } from "@/lib/emails/templates/blog/post-publishe
  * @throws ZodError se validazione fallisce
  */
 export async function createPost(input: unknown) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized: You must be logged in to create a post");
   }
@@ -26,8 +26,8 @@ export async function createPost(input: unknown) {
   const data = createPostSchema.parse(input);
 
   // Crea post
-  const [post] = await db
-    .insert(posts)
+  const [newPost] = await db
+    .insert(post)
     .values({
       ...data,
       published: data.published ?? false,
@@ -40,7 +40,7 @@ export async function createPost(input: unknown) {
   revalidatePath("/blog");
   revalidatePath("/admin/blog");
 
-  return { success: true, post };
+  return { success: true, post: newPost };
 }
 
 /**
@@ -48,13 +48,13 @@ export async function createPost(input: unknown) {
  * Richiede autenticazione e ownership del post.
  */
 export async function updatePost(postId: string, input: unknown) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized: You must be logged in to update a post");
   }
 
   // Verifica ownership
-  const [existingPost] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+  const [existingPost] = await db.select().from(post).where(eq(post.id, postId)).limit(1);
 
   if (!existingPost) {
     throw new Error("Post not found");
@@ -74,7 +74,7 @@ export async function updatePost(postId: string, input: unknown) {
 
   // Update post
   const [updatedPost] = await db
-    .update(posts)
+    .update(post)
     .set({
       ...data,
       publishedAt:
@@ -84,7 +84,7 @@ export async function updatePost(postId: string, input: unknown) {
             : null
           : existingPost.publishedAt,
     })
-    .where(eq(posts.id, postId))
+    .where(eq(post.id, postId))
     .returning();
 
   // Send email notification if post was just published
@@ -93,8 +93,8 @@ export async function updatePost(postId: string, input: unknown) {
       // Get author info
       const [author] = await db
         .select()
-        .from(users)
-        .where(eq(users.id, existingPost.authorId))
+        .from(user)
+        .where(eq(user.id, existingPost.authorId))
         .limit(1);
 
       if (author?.email) {
@@ -132,13 +132,13 @@ export async function updatePost(postId: string, input: unknown) {
  * Richiede autenticazione e ownership del post.
  */
 export async function deletePost(postId: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized: You must be logged in to delete a post");
   }
 
   // Verifica ownership
-  const [existingPost] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+  const [existingPost] = await db.select().from(post).where(eq(post.id, postId)).limit(1);
 
   if (!existingPost) {
     throw new Error("Post not found");
@@ -149,7 +149,7 @@ export async function deletePost(postId: string) {
   }
 
   // Delete post
-  await db.delete(posts).where(eq(posts.id, postId));
+  await db.delete(post).where(eq(post.id, postId));
 
   // Revalidate cache
   revalidatePath("/blog");
@@ -163,16 +163,16 @@ export async function deletePost(postId: string) {
  * Richiede autenticazione.
  */
 export async function getPostsForAdmin() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
   const allPosts = await db
     .select()
-    .from(posts)
-    .where(eq(posts.authorId, session.user.id))
-    .orderBy(desc(posts.createdAt));
+    .from(post)
+    .where(eq(post.authorId, session.user.id))
+    .orderBy(desc(post.createdAt));
 
   return allPosts;
 }

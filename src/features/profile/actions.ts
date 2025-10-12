@@ -1,8 +1,8 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { updateProfileSchema } from "./schema";
@@ -12,7 +12,7 @@ import { updateProfileSchema } from "./schema";
  * Ogni utente autenticato può aggiornare solo il proprio profilo.
  */
 export async function updateProfile(input: unknown) {
-  const session = await auth();
+  const session = await getSession();
 
   // Verifica che l'utente sia autenticato
   if (!session?.user) {
@@ -24,7 +24,7 @@ export async function updateProfile(input: unknown) {
 
   try {
     // Verifica se l'email è già in uso da un altro utente
-    const existingUser = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
+    const existingUser = await db.select().from(user).where(eq(user.email, data.email)).limit(1);
 
     if (existingUser.length > 0 && existingUser[0].id !== session.user.id) {
       throw new Error("Email is already in use by another user");
@@ -32,13 +32,13 @@ export async function updateProfile(input: unknown) {
 
     // Aggiorna il profilo dell'utente autenticato
     await db
-      .update(users)
+      .update(user)
       .set({
         name: data.name,
         email: data.email,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, session.user.id));
+      .where(eq(user.id, session.user.id));
 
     // Revalida la pagina profilo
     revalidatePath("/dashboard/profile");

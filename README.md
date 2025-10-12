@@ -49,7 +49,7 @@ AI-first Next.js template for rapid development with authentication, database, a
 
 - **Drizzle ORM** - TypeScript-first ORM with edge support
 - **Neon PostgreSQL** - Serverless Postgres with branching
-- **NextAuth v5** - Authentication with Drizzle adapter
+- **Better Auth** - Modern authentication with built-in security
 
 ### Deployment
 
@@ -71,11 +71,12 @@ AI-first Next.js template for rapid development with authentication, database, a
 
 ### 🔐 Authentication & RBAC
 
-- ✅ Email/password with NextAuth v5
-- ✅ Email verification & password reset
+- ✅ Email/password with Better Auth
+- ✅ Email verification & password reset (built-in)
 - ✅ Role-Based Access Control (user/editor/admin)
 - ✅ Protected routes with middleware
-- ✅ Session management with JWT
+- ✅ Rate limiting for security
+- ✅ Custom PBKDF2 hashing (Cloudflare Workers compatible)
 
 </td>
 <td width="50%">
@@ -192,16 +193,17 @@ Create `.env` file:
 # Database (Neon PostgreSQL)
 DATABASE_URL="postgresql://..."
 
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="run: openssl rand -base64 32"
+# Better Auth
+BETTER_AUTH_URL="http://localhost:3000"
+BETTER_AUTH_SECRET="run: openssl rand -base64 32"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 # Email (optional - mock by default)
 ADMIN_EMAIL="admin@yourdomain.com"
 # RESEND_API_KEY="re_xxxxx" # Uncomment to enable real emails
 ```
 
-Generate NextAuth secret:
+Generate Better Auth secret:
 
 ```bash
 openssl rand -base64 32
@@ -235,9 +237,9 @@ src/
 ├── app/
 │ ├── (routes)/ # Page routes
 │ ├── dashboard/ # Protected dashboard with RBAC
-│ ├── api/auth/ # NextAuth handler
+│ ├── api/auth/ # Better Auth handler
 │ ├── layout.tsx # Root layout with providers
-│ └── providers.tsx # Client providers (Theme, Session)
+│ └── providers.tsx # Client providers (Theme)
 ├── components/
 │ ├── ui/ # shadcn/ui components
 │ ├── layout/ # Navbar, Footer, ThemeToggle
@@ -252,10 +254,11 @@ src/
 │ ├── contact/ # Contact form feature
 │ └── newsletter/ # Newsletter feature
 ├── lib/
-│ ├── auth.ts # NextAuth config
+│ ├── auth.ts # Better Auth config
+│ ├── auth-client.ts # Client-side hooks
 │ ├── permissions.ts # RBAC permission system
-│ ├── utils.ts # Utility functions (cn, etc.)
-│ └── email.ts # Email sending (mock by default)
+│ ├── password.ts # PBKDF2 hashing (Cloudflare Workers compatible)
+│ └── utils.ts # Utility functions (cn, etc.)
 ├── db/
 │ ├── schema.ts # Drizzle schema (users with roles)
 │ └── index.ts # Database client
@@ -368,8 +371,9 @@ Or set in Cloudflare dashboard → Workers → Settings → Variables and Secret
 **Required:**
 
 - `DATABASE_URL` - Neon connection string
-- `NEXTAUTH_URL` - Your production URL (e.g., https://yourapp.workers.dev)
-- `NEXTAUTH_SECRET` - Same as local (use `openssl rand -base64 32`)
+- `BETTER_AUTH_URL` - Your production URL (e.g., https://yourapp.workers.dev)
+- `BETTER_AUTH_SECRET` - Same as local (use `openssl rand -base64 32`)
+- `NEXT_PUBLIC_APP_URL` - Same as BETTER_AUTH_URL
 
 **Optional:**
 
@@ -406,15 +410,16 @@ Or set in Cloudflare dashboard → Workers → Settings → Variables and Secret
 
 See `docs/` folder for detailed guides:
 
-- `RBAC.md` - Role-Based Access Control system (user/editor/admin)
-- `STACK.md` - Technology choices and rationale (Drizzle, NextAuth, Cloudflare)
-- `SETUP.md` - Detailed setup instructions from scratch
-- `ARCHITECTURE.md` - Project structure and conventions
-- `COMPONENTS.md` - Complete components reference (UI, layout, auth, dashboard)
-- `EXAMPLES.md` - Complete code examples with Drizzle + NextAuth
-- `SCRIPTS.md` - Available npm scripts and workflows
-- `AI_WORKFLOW.md` - Working with AI assistants (includes `/changelog` and `/release` commands)
-- `recipes/` - Common feature patterns
+- **`AUTHENTICATION.md`** - Complete Better Auth guide (email/password, verification, password reset)
+- **`AUTHENTICATION_ADVANCED.md`** - Advanced auth flows (security, edge compatibility)
+- **`RBAC.md`** - Role-Based Access Control system (user/editor/admin)
+- **`ARCHITECTURE.md`** - Project structure and conventions
+- **`AI_WORKFLOW.md`** - Working with AI assistants (includes `/changelog` and `/release` commands)
+- `STACK.md` - Technology choices and rationale (Drizzle, Better Auth, Cloudflare)
+- `DEPLOYMENT.md` - Cloudflare Workers deployment guide
+- `MIDDLEWARE.md` - Authentication middleware (edge-compatible)
+- `EMAIL_SYSTEM.md` - Email configuration and templates
+- `recipes/` - Step-by-step guides for common tasks
 
 ## 📊 Comparison
 
@@ -422,7 +427,7 @@ How does Templator compare to other Next.js starters?
 
 | Feature                | Templator                     | create-t3-app     | Next.js SaaS Starter |
 | ---------------------- | ----------------------------- | ----------------- | -------------------- |
-| **Auth System**        | ✅ NextAuth v5 + RBAC         | ✅ NextAuth       | ⚠️ Custom            |
+| **Auth System**        | ✅ Better Auth + RBAC         | ✅ NextAuth       | ⚠️ Custom            |
 | **Email Verification** | ✅ Built-in                   | ❌ Manual setup   | ❌ Manual setup      |
 | **Password Reset**     | ✅ Built-in                   | ❌ Manual setup   | ❌ Manual setup      |
 | **Role-Based Access**  | ✅ 3-tier RBAC                | ❌ DIY            | ❌ DIY               |
@@ -442,12 +447,13 @@ How does Templator compare to other Next.js starters?
 - Smaller bundle size
 - Perfect Cloudflare Workers compatibility
 
-**Why NextAuth v5?**
+**Why Better Auth?**
 
-- Native Next.js 15 App Router support
-- Official Drizzle adapter
-- JWT + Database sessions
-- Works on edge runtime
+- Modern, actively maintained (Auth.js/NextAuth is now maintained by Better Auth team)
+- Built-in rate limiting, email verification, password reset
+- TypeScript-first with excellent type inference
+- Cloudflare Workers compatible (custom PBKDF2 hashing)
+- No SessionProvider wrapper needed
 
 **Why Cloudflare Workers?**
 
@@ -462,7 +468,7 @@ Built with:
 
 - [Next.js](https://nextjs.org)
 - [Drizzle ORM](https://orm.drizzle.team)
-- [NextAuth](https://next-auth.js.org)
+- [Better Auth](https://better-auth.com)
 - [shadcn/ui](https://ui.shadcn.com)
 - [Tailwind CSS](https://tailwindcss.com)
 - [Cloudflare Workers](https://workers.cloudflare.com)

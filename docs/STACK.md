@@ -68,31 +68,37 @@
 
 ### Auth
 
-**NextAuth v5 (Auth.js)**
+**Better Auth**
 
-- Integrazione nativa con Next.js App Router
-- Drizzle Adapter → seamless integration con database
-- JWT + Database sessions → flessibilità completa
-- Credentials provider → email/password out-of-the-box
-- Estendibile con OAuth providers (GitHub, Google, ecc.)
-- Callbacks personalizzabili → controllo totale su session/token
+- Edge-native authentication framework
+- Drizzle adapter → seamless integration con PostgreSQL
+- Database sessions + cookie caching → performance ottimali
+- Email/password built-in → sign up, email verification, password reset
+- Custom PBKDF2 password hashing → Cloudflare Workers compatible
+- Estendibile con OAuth providers (GitHub, Google, 50+ providers)
+- Database-backed rate limiting → edge-compatible anti-brute-force
+- No SessionProvider needed → API più semplice
 
 **RBAC (Role-Based Access Control)**
 
 - Three-tier role system: user, editor, admin
+- Better Auth `user.additionalFields` → custom role field
 - Permission helpers in `src/lib/permissions.ts`
+- Server-side: `requireAuth(["admin"])` for route protection
 - Server components: `RoleGate` for conditional rendering
 - Client components: `RoleGateClient` with `useSession()`
-- Middleware protection for route-level access control
-- Type-safe role extensions in NextAuth session
+- Middleware: lightweight cookie check (< 1ms)
+- Type-safe session with role field included
 
-**Perché NextAuth v5?**
+**Perché Better Auth invece di NextAuth?**
 
-- Integrazione perfetta con Next.js 15
-- Drizzle adapter ufficiale ben supportato
-- Ecosistema maturo e community grande
-- Pattern prevedibili → AI replica facilmente
-- Funziona su edge runtime (Cloudflare Workers)
+- **Edge-first**: Progettato per Cloudflare Workers, Vercel Edge, Deno
+- **Better DX**: No complex route patterns, cleaner API
+- **Type-safe**: Excellent TypeScript inference out-of-the-box
+- **Modern**: Attivamente sviluppato con features moderne
+- **Framework agnostic**: Non legato solo a Next.js
+- **Built-in features**: Email verification, password reset, rate limiting inclusi
+- **Performance**: Cookie caching, database-backed sessions ottimizzate per edge
 
 ### Qualità codice
 

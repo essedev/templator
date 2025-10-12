@@ -19,6 +19,7 @@ Follow these steps:
 4. **Show the user** what changed in the changelog and ask for confirmation to proceed
 
 5. **Create git commit and tag**:
+
    ```bash
    git add CHANGELOG.md
    git commit -m "chore: release vx.y.z"

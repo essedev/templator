@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth-client";
 import { loginSchema, type LoginFormData } from "@/features/auth/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,15 +31,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Usa signIn di NextAuth (aggiorna automaticamente la session)
-      const result = await signIn("credentials", {
+      // Better Auth sign in
+      const result = await signIn.email({
         email: data.email,
         password: data.password,
-        redirect: false,
       });
 
-      if (result?.error) {
-        throw new Error("Email o password non validi");
+      if (result.error) {
+        throw new Error(result.error.message || "Email o password non validi");
       }
 
       // Redirect a home (la session sarà già aggiornata)

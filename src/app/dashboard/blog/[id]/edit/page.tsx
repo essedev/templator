@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { posts } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { post } from "@/db/schema";
+import { requireAuth } from "@/lib/rbac";
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { PostForm } from "@/features/blog/PostForm";
@@ -13,25 +13,23 @@ interface EditPostPageProps {
 }
 
 /**
- * Dashboard page per modificare blog post esistente.
+ * Dashboard page per modificare blog post esistente (Editor/Admin only).
  */
 export default async function EditPostPage({ params }: EditPostPageProps) {
   const { id } = await params;
-  const session = await auth();
 
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+  // Richiede ruolo editor o admin
+  const session = await requireAuth(["editor", "admin"]);
 
   // Fetch post
-  const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
+  const [postData] = await db.select().from(post).where(eq(post.id, id)).limit(1);
 
-  if (!post) {
+  if (!postData) {
     notFound();
   }
 
   // Verifica ownership
-  if (post.authorId !== session.user.id) {
+  if (postData.authorId !== session.user.id) {
     redirect("/dashboard/blog");
   }
 
@@ -47,14 +45,14 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
         <CardContent>
           <PostForm
             mode="edit"
-            postId={post.id}
+            postId={postData.id}
             defaultValues={{
-              title: post.title,
-              slug: post.slug,
-              excerpt: post.excerpt || undefined,
-              content: post.content,
-              coverImage: post.coverImage || undefined,
-              published: post.published,
+              title: postData.title,
+              slug: postData.slug,
+              excerpt: postData.excerpt || undefined,
+              content: postData.content,
+              coverImage: postData.coverImage || undefined,
+              published: postData.published,
             }}
           />
         </CardContent>

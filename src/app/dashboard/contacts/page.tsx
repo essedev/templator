@@ -1,26 +1,22 @@
 import { db } from "@/db";
-import { contactMessages } from "@/db/schema";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { contactMessage } from "@/db/schema";
+import { requireAuth } from "@/lib/rbac";
 import { desc } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/common";
 
 /**
- * Dashboard contacts page.
+ * Dashboard contacts page (Editor/Admin only).
  * Mostra tutti i messaggi ricevuti dal form di contatto.
  */
 export const dynamic = "force-dynamic";
 
 export default async function ContactsPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  // Richiede ruolo editor o admin
+  await requireAuth(["editor", "admin"]);
 
   // Fetch tutti i messaggi
-  const messages = await db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt));
+  const messages = await db.select().from(contactMessage).orderBy(desc(contactMessage.createdAt));
 
   return (
     <div className="space-y-6">

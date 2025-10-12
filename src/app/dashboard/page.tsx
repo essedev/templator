@@ -1,22 +1,22 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { users, sessions, posts, contactMessages, newsletterSubscribers } from "@/db/schema";
+import { user, session, post, contactMessage, newsletterSubscriber } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { count, eq } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleGate } from "@/components/auth";
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const userSession = await getSession();
 
-  if (!session?.user) {
+  if (!userSession?.user) {
     redirect("/login");
   }
 
   // Query statistiche base
   const [userCountResult, sessionCountResult] = await Promise.all([
-    db.select({ count: count() }).from(users),
-    db.select({ count: count() }).from(sessions),
+    db.select({ count: count() }).from(user),
+    db.select({ count: count() }).from(session),
   ]);
 
   const userCount = userCountResult[0]?.count ?? 0;
@@ -24,11 +24,11 @@ export default async function DashboardPage() {
 
   // My Posts count (solo per editor/admin che possono scrivere)
   let myPostsCount = 0;
-  if (session.user.role === "editor" || session.user.role === "admin") {
+  if (userSession.user.role === "editor" || userSession.user.role === "admin") {
     const myPostsResult = await db
       .select({ count: count() })
-      .from(posts)
-      .where(eq(posts.authorId, session.user.id));
+      .from(post)
+      .where(eq(post.authorId, userSession.user.id));
     myPostsCount = myPostsResult[0]?.count ?? 0;
   }
 
@@ -37,11 +37,11 @@ export default async function DashboardPage() {
   let contactCount = 0;
   let subscriberCount = 0;
 
-  if (session.user.role === "editor" || session.user.role === "admin") {
+  if (userSession.user.role === "editor" || userSession.user.role === "admin") {
     const [totalPostsResult, contactResult, subscriberResult] = await Promise.all([
-      db.select({ count: count() }).from(posts),
-      db.select({ count: count() }).from(contactMessages),
-      db.select({ count: count() }).from(newsletterSubscribers),
+      db.select({ count: count() }).from(post),
+      db.select({ count: count() }).from(contactMessage),
+      db.select({ count: count() }).from(newsletterSubscriber),
     ]);
 
     totalPostsCount = totalPostsResult[0]?.count ?? 0;
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Welcome back, {session.user.name}!</h1>
+        <h1 className="text-3xl font-bold">Welcome back, {userSession.user.name}!</h1>
         <p className="text-muted-foreground mt-1">Here's what's happening with your account.</p>
       </div>
 

@@ -1,0 +1,138 @@
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  bigint,
+  primaryKey,
+  boolean,
+  pgEnum,
+} from "drizzle-orm/pg-core";
+
+// ============================================
+// AUTHENTICATION TABLES (Better Auth)
+// ============================================
+
+// User role enum (custom field for RBAC)
+export const userRoleEnum = pgEnum("user_role", ["user", "editor", "admin"]);
+
+// User table (managed by Better Auth)
+export const users = pgTable("user", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name"),
+  email: text("email").notNull().unique(),
+  emailVerified: timestamp("emailVerified", { mode: "date" }),
+  password: text("password"), // PBKDF2 hash
+  role: userRoleEnum("role").notNull().default("user"), // Custom field for RBAC
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// Account table (managed by Better Auth - required even if not using OAuth)
+export const accounts = pgTable("account", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accountId: text("accountId").notNull(),
+  providerId: text("providerId").notNull(),
+  accessToken: text("accessToken"),
+  refreshToken: text("refreshToken"),
+  expiresAt: timestamp("expiresAt", { mode: "date" }),
+  password: text("password"),
+});
+
+// Session table (managed by Better Auth)
+export const sessions = pgTable("session", {
+  sessionToken: text("sessionToken").primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// Verification Token table (used for email verification and password reset - managed by Better Auth)
+export const verificationTokens = pgTable(
+  "verification_token",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => ({
+    compoundKey: primaryKey({
+      columns: [vt.identifier, vt.token],
+    }),
+  })
+);
+
+// Rate Limit table (managed by Better Auth for database-backed rate limiting)
+export const rateLimits = pgTable("rateLimit", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()), // Better Auth expects "id" field
+  key: text("key").notNull().unique(), // Unique identifier (e.g., IP address, user ID, or action)
+  count: integer("count").notNull().default(0), // Number of requests
+  lastRequest: bigint("lastRequest", { mode: "number" }).notNull(), // Unix timestamp in milliseconds
+});
+
+// ============================================
+// BUSINESS TABLES
+// ============================================
+
+// Contact messages from public contact form
+export const contactMessages = pgTable("contact_message", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+});
+
+// Newsletter subscribers
+export const newsletterSubscribers = pgTable("newsletter_subscriber", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  email: text("email").notNull().unique(),
+  status: text("status").notNull().default("pending"), // pending, active, unsubscribed
+  subscribedAt: timestamp("subscribedAt", { mode: "date" }).notNull().defaultNow(),
+  confirmedAt: timestamp("confirmedAt", { mode: "date" }),
+  unsubscribedAt: timestamp("unsubscribedAt", { mode: "date" }),
+});
+
+// Blog posts
+export const posts = pgTable("post", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  coverImage: text("coverImage"),
+  authorId: text("authorId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  published: boolean("published").notNull().default(false),
+  publishedAt: timestamp("publishedAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});

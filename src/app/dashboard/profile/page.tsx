@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { user } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,16 +15,16 @@ import { Shield, Mail, Calendar, Clock } from "lucide-react";
  * Accessibile a tutti gli utenti autenticati.
  */
 export default async function ProfilePage() {
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user) {
     redirect("/login");
   }
 
   // Fetch dati utente completi
-  const [user] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+  const [userData] = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1);
 
-  if (!user) {
+  if (!userData) {
     redirect("/login");
   }
 
@@ -33,7 +33,7 @@ export default async function ProfilePage() {
       <PageHeader title="Profile" description="View and manage your account information" />
 
       {/* Profile Information - Editable */}
-      <EditProfileForm initialName={user.name ?? ""} initialEmail={user.email} />
+      <EditProfileForm initialName={userData.name ?? ""} initialEmail={userData.email} />
 
       {/* Account Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -49,20 +49,20 @@ export default async function ProfilePage() {
             <div className="space-y-3">
               <Badge
                 variant={
-                  user.role === "admin"
+                  userData.role === "admin"
                     ? "default"
-                    : user.role === "editor"
+                    : userData.role === "editor"
                       ? "secondary"
                       : "outline"
                 }
                 className="text-sm px-3 py-1"
               >
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
               </Badge>
               <p className="text-sm text-muted-foreground">
-                {user.role === "admin"
+                {userData.role === "admin"
                   ? "Full access to all features and settings"
-                  : user.role === "editor"
+                  : userData.role === "editor"
                     ? "Can manage content and view analytics"
                     : "Basic access to personal features"}
               </p>
@@ -80,7 +80,7 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {user.emailVerified ? (
+              {userData.emailVerified ? (
                 <>
                   <Badge variant="default" className="text-sm px-3 py-1">
                     ✓ Verified
@@ -114,7 +114,7 @@ export default async function ProfilePage() {
           <CardContent>
             <div className="space-y-2">
               <p className="text-2xl font-semibold">
-                {new Date(user.createdAt).toLocaleDateString("en-US", {
+                {new Date(userData.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -122,7 +122,7 @@ export default async function ProfilePage() {
               </p>
               <p className="text-sm text-muted-foreground">
                 {Math.floor(
-                  (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+                  (Date.now() - new Date(userData.createdAt).getTime()) / (1000 * 60 * 60 * 24)
                 )}{" "}
                 days ago
               </p>
@@ -141,7 +141,7 @@ export default async function ProfilePage() {
           <CardContent>
             <div className="space-y-2">
               <p className="text-2xl font-semibold">
-                {new Date(user.updatedAt).toLocaleDateString("en-US", {
+                {new Date(userData.updatedAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",

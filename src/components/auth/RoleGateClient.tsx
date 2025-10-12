@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { hasRole, type Role } from "@/lib/permissions";
 
 interface RoleGateClientProps {
@@ -32,15 +32,17 @@ export function RoleGateClient({
   fallback = null,
   loading = null,
 }: RoleGateClientProps) {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   // Loading state
-  if (status === "loading") {
+  if (isPending) {
     return <>{loading}</>;
   }
 
   // Check if user has required role
-  const userRole = session?.user?.role;
+  // Type guard: Better Auth user with role field
+  const userRole =
+    session?.user && "role" in session.user ? (session.user.role as Role) : undefined;
   const hasRequiredRole = allowedRoles.some((role) => hasRole(userRole, role));
 
   if (!hasRequiredRole) {

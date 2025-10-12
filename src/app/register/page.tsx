@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
-import { registerUser } from "@/features/auth/actions";
+import { signUp } from "@/lib/auth-client";
 import { registerSchema, type RegisterFormData } from "@/features/auth/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,26 +31,19 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Chiama Server Action per registrazione
-      const registerResult = await registerUser(data);
-
-      if (!registerResult.success) {
-        throw new Error(registerResult.error || "Registrazione fallita");
-      }
-
-      // Auto-login dopo registrazione usando signIn (aggiorna session automaticamente)
-      const loginResult = await signIn("credentials", {
+      // Use Better Auth signUp method (handles user + account creation)
+      const { error } = await signUp.email({
+        name: data.name,
         email: data.email,
         password: data.password,
-        redirect: false,
       });
 
-      if (loginResult?.error) {
-        throw new Error("Registrazione riuscita ma auto-login fallito");
+      if (error) {
+        throw new Error(error.message || "Registrazione fallita");
       }
 
-      // Redirect a home (la session sarà già aggiornata)
-      router.push("/");
+      // Redirect to dashboard (Better Auth auto-logs in after signup)
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registrazione fallita");

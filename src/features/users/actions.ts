@@ -1,8 +1,8 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { updateUserRoleSchema } from "./schema";
@@ -14,7 +14,7 @@ import { RoleChangedTemplate } from "@/lib/emails/templates/users/role-changed";
  * Solo gli admin possono eseguire questa azione.
  */
 export async function updateUserRole(userId: string, role: string) {
-  const session = await auth();
+  const session = await getSession();
 
   // Verifica che l'utente sia autenticato e sia admin
   if (!session?.user || session.user.role !== "admin") {
@@ -31,7 +31,7 @@ export async function updateUserRole(userId: string, role: string) {
 
   try {
     // Get user's current info before update
-    const [targetUser] = await db.select().from(users).where(eq(users.id, data.userId)).limit(1);
+    const [targetUser] = await db.select().from(user).where(eq(user.id, data.userId)).limit(1);
 
     if (!targetUser) {
       throw new Error("User not found");
@@ -40,7 +40,7 @@ export async function updateUserRole(userId: string, role: string) {
     const oldRole = targetUser.role;
 
     // Aggiorna il ruolo dell'utente
-    await db.update(users).set({ role: data.role }).where(eq(users.id, data.userId));
+    await db.update(user).set({ role: data.role }).where(eq(user.id, data.userId));
 
     // Send notification email to the user
     if (targetUser.email) {
@@ -77,7 +77,7 @@ export async function updateUserRole(userId: string, role: string) {
  * Solo gli admin possono eseguire questa azione.
  */
 export async function deleteUser(userId: string) {
-  const session = await auth();
+  const session = await getSession();
 
   // Verifica che l'utente sia autenticato e sia admin
   if (!session?.user || session.user.role !== "admin") {
@@ -91,7 +91,7 @@ export async function deleteUser(userId: string) {
 
   try {
     // Elimina l'utente (cascade eliminerà anche posts, sessions, ecc.)
-    await db.delete(users).where(eq(users.id, userId));
+    await db.delete(user).where(eq(user.id, userId));
 
     // Revalida la pagina
     revalidatePath("/dashboard/users");

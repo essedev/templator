@@ -1,7 +1,6 @@
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { user } from "@/db/schema";
+import { requireAuth } from "@/lib/rbac";
 import { desc } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,24 +15,20 @@ import { RoleSelector } from "./RoleSelector";
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  const session = await auth();
-
-  // Double check: anche se il middleware protegge, verifichiamo comunque
-  if (!session?.user || session.user.role !== "admin") {
-    redirect("/dashboard");
-  }
+  // Richiede ruolo admin
+  const session = await requireAuth(["admin"]);
 
   // Fetch tutti gli utenti
   const allUsers = await db
     .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      createdAt: users.createdAt,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
     })
-    .from(users)
-    .orderBy(desc(users.createdAt));
+    .from(user)
+    .orderBy(desc(user.createdAt));
 
   // Statistiche per ruolo
   const usersByRole = {
@@ -87,32 +82,32 @@ export default async function UsersPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {allUsers.map((user) => (
+            {allUsers.map((userItem) => (
               <div
-                key={user.id}
+                key={userItem.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="font-medium">{userItem.name}</p>
+                      <p className="text-sm text-muted-foreground">{userItem.email}</p>
                     </div>
-                    {user.id === session.user.id && (
+                    {userItem.id === session.user.id && (
                       <Badge variant="outline" className="text-xs">
                         You
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Joined: {new Date(user.createdAt).toLocaleDateString()}
+                    Joined: {new Date(userItem.createdAt).toLocaleDateString()}
                   </p>
                 </div>
 
                 <RoleSelector
-                  userId={user.id}
-                  currentRole={user.role}
-                  disabled={user.id === session.user.id}
+                  userId={userItem.id}
+                  currentRole={userItem.role}
+                  disabled={userItem.id === session.user.id}
                 />
               </div>
             ))}

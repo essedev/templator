@@ -1,20 +1,20 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
-import { SessionProvider } from "next-auth/react";
 import { Toaster } from "@/components/ui/sonner";
 
 /**
  * Client providers wrapper.
- * Include ThemeProvider (dark mode), SessionProvider (NextAuth) e Sonner (toast notifications).
+ * Include ThemeProvider (dark mode) e Sonner (toast notifications).
+ *
+ * Note: Better Auth doesn't require a SessionProvider wrapper like NextAuth.
+ * Session management is handled automatically via cookies and hooks.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        {children}
-        <Toaster />
-      </ThemeProvider>
-    </SessionProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      {children}
+      <Toaster />
+    </ThemeProvider>
   );
 }

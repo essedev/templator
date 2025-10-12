@@ -1,5 +1,6 @@
 "use client";
 
+import type { AppUser } from "@/types/auth.d";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,14 +12,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LayoutDashboard, LogOut, Menu, User } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { data: session, isPending } = useSession();
+
+  // Type-safe user with role
+  const user = session?.user as AppUser | undefined;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -56,7 +62,7 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-2">
-            {status === "loading" ? (
+            {isPending ? (
               <div className="h-9 w-24 animate-pulse bg-muted rounded-md" />
             ) : session ? (
               // Logged in: Profile dropdown
@@ -74,20 +80,22 @@ export function Navbar() {
                     <div>
                       <p className="text-sm font-medium truncate">{session.user.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
-                      <div className="mt-2">
-                        <Badge
-                          variant={
-                            session.user.role === "admin"
-                              ? "default"
-                              : session.user.role === "editor"
-                                ? "secondary"
-                                : "outline"
-                          }
-                          className="text-xs"
-                        >
-                          {session.user.role.charAt(0).toUpperCase() + session.user.role.slice(1)}
-                        </Badge>
-                      </div>
+                      {user?.role && (
+                        <div className="mt-2">
+                          <Badge
+                            variant={
+                              user.role === "admin"
+                                ? "default"
+                                : user.role === "editor"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                            className="text-xs"
+                          >
+                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -105,7 +113,11 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => signOut({ callbackUrl: "/" })}
+                    onClick={async () => {
+                      await signOut();
+                      router.push("/");
+                      router.refresh();
+                    }}
                     className="flex items-center gap-2"
                   >
                     <LogOut className="h-4 w-4" />
@@ -186,9 +198,11 @@ export function Navbar() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => {
+                    onClick={async () => {
                       setMobileMenuOpen(false);
-                      signOut({ callbackUrl: "/" });
+                      await signOut();
+                      router.push("/");
+                      router.refresh();
                     }}
                   >
                     <LogOut className="h-4 w-4 mr-2" />

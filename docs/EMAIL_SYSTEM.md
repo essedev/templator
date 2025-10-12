@@ -2,14 +2,16 @@
 
 ## Overview
 
-Templator includes a complete, production-ready email system with:
+Templator includes a complete, production-ready email system powered by **Better Auth** with:
 
-- ✅ Email verification for new accounts
-- ✅ Password reset functionality
+- ✅ Email verification for new accounts (auto-enabled with Resend)
+- ✅ Password reset functionality (built-in)
 - ✅ Mock mode for development (zero configuration)
 - ✅ Resend integration for production
 - ✅ React Email templates (type-safe, maintainable)
 - ✅ Edge-compatible (Cloudflare Workers ready)
+
+**Integration:** Email flows are handled by Better Auth with custom email sending via Resend.
 
 ---
 
@@ -29,11 +31,13 @@ pnpm dev
 1. Get API key from [resend.com](https://resend.com)
 2. Add to `.env`:
    ```bash
+   EMAIL_PROVIDER="resend"
    RESEND_API_KEY="re_xxxxx"
    EMAIL_FROM="noreply@yourdomain.com"
-   EMAIL_PROVIDER="resend"
    ```
 3. Deploy - emails are sent automatically
+
+**Note:** Setting `EMAIL_PROVIDER="resend"` automatically enables email verification in Better Auth (see `src/lib/auth.ts`).
 
 ---
 
@@ -43,15 +47,18 @@ pnpm dev
 
 **Flow:**
 
-1. User registers → Email sent with verification link
-2. User clicks link → Email verified
+1. User registers → Better Auth sends email with verification link (if EMAIL_PROVIDER="resend")
+2. User clicks link → Email verified by Better Auth
 3. Account activated
 
 **Files:**
 
+- Config: `src/lib/auth.ts` (Better Auth `emailAndPassword.sendVerificationEmail`)
+- Email sender: `src/lib/emails/auth-emails.ts` (`sendVerificationEmail()`)
 - Template: `src/lib/emails/templates/auth/verify-email.tsx`
-- Actions: `src/features/auth/email-actions.ts` (`sendVerificationEmail`, `verifyEmailToken`)
-- Page: `src/app/verify-email/[token]/page.tsx`
+- Page: `src/app/verify-email/page.tsx`
+
+**Auto-enabled:** Email verification is automatically enabled when `EMAIL_PROVIDER="resend"` (configured in `src/lib/auth.ts`).
 
 **Test:**
 
@@ -67,19 +74,20 @@ pnpm dev
 
 **Flow:**
 
-1. User requests reset → Email sent with reset link (1 hour expiry)
+1. User requests reset → Better Auth sends email with reset link (1 hour expiry)
 2. User clicks link → New password form
-3. Password updated → Confirmation email sent
+3. Password updated via Better Auth
 
 **Files:**
 
-- Templates:
-  - `src/lib/emails/templates/auth/password-reset.tsx`
-  - `src/lib/emails/templates/auth/password-changed.tsx`
-- Actions: `src/features/auth/email-actions.ts` (`requestPasswordReset`, `resetPassword`)
+- Config: `src/lib/auth.ts` (Better Auth `emailAndPassword.sendResetPassword`)
+- Email sender: `src/lib/emails/auth-emails.ts` (`sendPasswordResetEmail()`)
+- Template: `src/lib/emails/templates/auth/password-reset.tsx`
 - Pages:
-  - `src/app/forgot-password/page.tsx`
-  - `src/app/reset-password/[token]/page.tsx`
+  - `src/app/forgot-password/page.tsx` (request reset form)
+  - `src/app/reset-password/page.tsx` (reset form with token in URL)
+
+**Built-in:** Password reset is always available, regardless of EMAIL_PROVIDER (but emails only sent when not in mock mode).
 
 **Test:**
 
@@ -98,16 +106,14 @@ pnpm dev
 
 ```
 src/lib/emails/
-├── config.ts                    # Email provider configuration
-├── send.ts                      # Unified send function
+├── auth-emails.ts               # Better Auth email senders
 └── templates/
     ├── base/
     │   ├── layout.tsx           # Shared email layout
     │   └── components.tsx       # Reusable components
     ├── auth/
-    │   ├── verify-email.tsx
-    │   ├── password-reset.tsx
-    │   └── password-changed.tsx
+    │   ├── verify-email.tsx     # Email verification template
+    │   └── password-reset.tsx   # Password reset template
     ├── users/                   # Ready for role notifications
     ├── blog/                    # Ready for post notifications
     ├── newsletter/              # Ready for newsletter
@@ -116,27 +122,53 @@ src/lib/emails/
     └── system/                  # Ready for system emails
 ```
 
-### Send Function
+**Better Auth Integration:**
 
-All emails go through `sendEmail()` for consistency:
+- `auth-emails.ts` contains `sendVerificationEmail()` and `sendPasswordResetEmail()`
+- These are called by Better Auth hooks (configured in `src/lib/auth.ts`)
+- Templates use Resend's `@react-email/components` for rendering
+
+### Better Auth Email Senders
+
+Auth emails are sent through Better Auth hooks:
 
 ```typescript
-import { sendEmail } from '@/lib/emails/send';
-import { VerifyEmailTemplate } from '@/lib/emails/templates/auth/verify-email';
-
-await sendEmail({
-  to: 'user@example.com',
-  subject: 'Verify your email',
-  react: <VerifyEmailTemplate name="John" verificationUrl="https://..." />,
-});
+// src/lib/auth.ts
+emailAndPassword: {
+  sendVerificationEmail: async ({ user, url }) => {
+    await sendVerificationEmail({ user, url });
+  },
+  sendResetPassword: async ({ user, url }) => {
+    await sendPasswordResetEmail({ user, url });
+  },
+}
 ```
 
 **Automatic behavior:**
 
-- Mock mode → Logs to console
-- Production → Sends via Resend
+- Mock mode (`EMAIL_PROVIDER="mock"`) → Logs to console
+- Production (`EMAIL_PROVIDER="resend"`) → Sends via Resend
+- Email verification auto-enabled with Resend
 - Type-safe React templates
 - Error handling included
+
+### Custom Email Sending
+
+For non-auth emails (newsletter, notifications, etc.), use Resend directly:
+
+```typescript
+import { Resend } from 'resend';
+import { MyEmailTemplate } from '@/lib/emails/templates/my-email';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+await resend.emails.send({
+  from: process.env.EMAIL_FROM!,
+  to: user.email,
+  subject: 'Your subject',
+  react: <MyEmailTemplate {...props} />,
+});
+```
 
 ---
 
@@ -145,17 +177,23 @@ await sendEmail({
 ### Environment Variables
 
 ```bash
-# Required
-EMAIL_PROVIDER="mock"                    # or "resend" for production
+# Email Provider (controls Better Auth email verification)
+EMAIL_PROVIDER="mock"                    # "mock" (dev) or "resend" (production)
 
-# Resend (production only)
+# Resend Configuration (required if EMAIL_PROVIDER="resend")
 RESEND_API_KEY="re_xxxxx"               # Get from resend.com
+EMAIL_FROM="noreply@yourdomain.com"     # Sender address (must match verified domain)
 
-# Email addresses
-EMAIL_FROM="noreply@yourdomain.com"     # Sender address
-EMAIL_REPLY_TO="support@yourdomain.com" # Optional reply-to
-ADMIN_EMAIL="admin@yourdomain.com"      # Admin notifications
+# Optional
+EMAIL_REPLY_TO="support@yourdomain.com" # Reply-to address
+ADMIN_EMAIL="admin@yourdomain.com"      # For admin notifications
 ```
+
+**Important:** When `EMAIL_PROVIDER="resend"`:
+
+- Email verification is automatically enabled in Better Auth
+- `RESEND_API_KEY` and `EMAIL_FROM` must be set
+- `EMAIL_FROM` must be from a verified domain in Resend
 
 ### Provider Switching
 
@@ -207,21 +245,29 @@ export function RoleChangedTemplate({ name, oldRole, newRole }: RoleChangedProps
 
 ```typescript
 // src/features/users/actions.ts
-import { sendEmail } from '@/lib/emails/send';
+import { Resend } from 'resend';
 import { RoleChangedTemplate } from '@/lib/emails/templates/users/role-changed';
 
 export async function updateUserRole(userId: string, newRole: string) {
   // ... update logic ...
 
-  await sendEmail({
-    to: user.email,
-    subject: 'Your role has been updated',
-    react: <RoleChangedTemplate
-      name={user.name}
-      oldRole={user.role}
-      newRole={newRole}
-    />,
-  });
+  // Send email via Resend
+  if (process.env.EMAIL_PROVIDER === "resend") {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM!,
+      to: user.email,
+      subject: 'Your role has been updated',
+      react: <RoleChangedTemplate
+        name={user.name}
+        oldRole={user.role}
+        newRole={newRole}
+      />,
+    });
+  } else {
+    // Mock mode - log to console
+    console.log(`📧 [MOCK EMAIL] Role changed: ${user.email}`);
+  }
 }
 ```
 
@@ -251,26 +297,28 @@ export async function updateUserRole(userId: string, newRole: string) {
 
 ## Security Features
 
-### Email Verification
+### Email Verification (Better Auth)
 
-- ✅ Tokens expire in 24 hours
+- ✅ Managed by Better Auth `verification` table
+- ✅ Tokens expire based on Better Auth configuration
 - ✅ One-time use (deleted after verification)
-- ✅ UUID v4 tokens (cryptographically secure)
+- ✅ Cryptographically secure tokens
+- ✅ Auto-enabled when `EMAIL_PROVIDER="resend"`
 
-### Password Reset
+### Password Reset (Better Auth)
 
-- ✅ Tokens expire in 1 hour
-- ✅ One-time use
-- ✅ Doesn't reveal if email exists
-- ✅ Confirmation email sent after reset
+- ✅ Tokens expire in 1 hour (Better Auth default)
+- ✅ One-time use (deleted after reset)
+- ✅ Doesn't reveal if email exists (security best practice)
 - ✅ Old password immediately invalidated
+- ✅ Uses custom PBKDF2 hashing (Cloudflare Workers compatible)
 
 ### General
 
-- ✅ All tokens stored in database
+- ✅ All tokens stored in `verification` table (Better Auth)
 - ✅ Automatic cleanup of expired tokens
 - ✅ HTTPS-only links in production
-- ✅ Rate limiting ready (add middleware if needed)
+- ✅ Rate limiting built-in (Better Auth database-backed)
 
 ---
 
@@ -295,10 +343,11 @@ export async function updateUserRole(userId: string, newRole: string) {
 
 **Check:**
 
-1. `NEXTAUTH_URL` is set correctly
-2. Token hasn't expired (24h for verification, 1h for reset)
-3. Token hasn't been used already
-4. Check database `verificationTokens` table
+1. `BETTER_AUTH_URL` is set correctly (not `NEXTAUTH_URL`)
+2. Token hasn't expired (configurable in Better Auth, default 1h for reset)
+3. Token hasn't been used already (deleted after use)
+4. Check database `verification` table (Better Auth table)
+5. Ensure `EMAIL_PROVIDER="resend"` if expecting real emails
 
 ---
 
@@ -374,20 +423,21 @@ pnpm add @cloudflare/workers-types
 ### Test in Development
 
 ```bash
-# Terminal 1
+# Start dev server
 pnpm dev
 
-# Terminal 2 - Register user
-curl -X POST http://localhost:3000/api/register \
+# Register a user via UI at /register
+# Or use Better Auth API directly:
+curl -X POST http://localhost:3000/api/auth/sign-up/email \
   -H "Content-Type: application/json" \
   -d '{"name":"Test","email":"test@example.com","password":"password123"}'
 
-# Check Terminal 1 logs for:
-📧 [MOCK EMAIL SENT]
-  To: test@example.com
-  Subject: Verify your email address
-  ...
+# Check terminal logs for:
+📧 [MOCK EMAIL] Verification email would be sent to: test@example.com
+  Link: http://localhost:3000/verify-email?token=...
 ```
+
+**Note:** In mock mode (`EMAIL_PROVIDER="mock"`), emails are logged to console with verification links you can click.
 
 ### Preview Templates Locally
 

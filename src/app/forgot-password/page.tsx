@@ -1,51 +1,86 @@
 "use client";
 
 import { useState } from "react";
-import { requestPasswordReset } from "@/features/auth/email-actions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { forgetPassword } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  async function onSubmit(data: ForgotPasswordFormData) {
+    setError("");
+    setSuccess(false);
     setLoading(true);
 
     try {
-      await requestPasswordReset(email);
-      setSent(true);
+      // Better Auth forget password
+      const result = await forgetPassword({
+        email: data.email,
+        redirectTo: "/reset-password",
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to send reset email");
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send reset email");
     } finally {
       setLoading(false);
     }
   }
 
-  if (sent) {
+  if (success) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <div className="flex items-center justify-center bg-background p-4 h-full">
         <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex flex-col items-center gap-2">
-              <Mail className="h-12 w-12 text-primary" />
-              <CardTitle className="text-center">Check Your Email</CardTitle>
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle2 className="h-12 w-12 text-green-500" />
             </div>
+            <CardTitle className="text-2xl">Check Your Email</CardTitle>
+            <CardDescription>We've sent you a password reset link</CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              If an account exists with <strong>{email}</strong>, we've sent a password reset link.
+
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              If an account exists with that email address, you'll receive a password reset link
+              shortly. The link will expire in 1 hour.
             </p>
-            <p className="text-sm text-muted-foreground">
-              The link will expire in 1 hour for security reasons.
-            </p>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/login">Back to Login</Link>
-            </Button>
+
+            <div className="pt-4">
+              <Link href="/login" className="block">
+                <Button variant="outline" className="w-full">
+                  Back to Login
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -53,35 +88,44 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex items-center justify-center bg-background p-4 h-full">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Forgot Password</CardTitle>
-          <CardDescription>
-            Enter your email address and we'll send you a link to reset your password.
-          </CardDescription>
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl">Forgot Password?</CardTitle>
+          <CardDescription>Enter your email to receive a reset link</CardDescription>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register("email")}
                 placeholder="you@example.com"
-                required
-                disabled={loading}
+                autoFocus
               />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
+
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Sending..." : "Send Reset Link"}
             </Button>
+
             <div className="text-center">
-              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground">
-                Back to login
-              </Link>
+              <p className="text-sm text-muted-foreground">
+                Remember your password?{" "}
+                <Link href="/login" className="font-medium text-primary hover:underline">
+                  Sign in
+                </Link>
+              </p>
             </div>
           </form>
         </CardContent>

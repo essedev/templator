@@ -1,9 +1,10 @@
-import { Session } from "next-auth";
+import type { AppSession, Role } from "@/types/auth.d";
 
 /**
  * Definizione ruoli disponibili nel sistema
+ * Imported from types/auth.d.ts
  */
-export type Role = "user" | "editor" | "admin";
+export type { Role };
 
 /**
  * Definizione permessi disponibili nel sistema
@@ -103,13 +104,13 @@ export function isEditor(userRole: Role | undefined | null): boolean {
 /**
  * Helper per verificare permessi da una session
  */
-export function can(session: Session | null, permission: Permission): boolean {
+export function can(session: AppSession | null, permission: Permission): boolean {
   return hasPermission(session?.user?.role, permission);
 }
 
 /**
  * Helper per verificare ruolo da una session
  */
-export function checkRole(session: Session | null, requiredRole: Role): boolean {
+export function checkRole(session: AppSession | null, requiredRole: Role): boolean {
   return hasRole(session?.user?.role, requiredRole);
 }

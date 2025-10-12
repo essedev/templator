@@ -1,8 +1,10 @@
-# Role-Based Access Control (RBAC) Documentation
+# Role-Based Access Control (RBAC)
+
+Complete guide to the role-based access control system in Templator.
 
 ## Overview
 
-This application implements a comprehensive Role-Based Access Control (RBAC) system that controls access to features and data based on user roles.
+This application implements a comprehensive RBAC system using Better Auth's custom user fields. Access to features, routes, and data is controlled based on user roles with a hierarchical permission system.
 
 ## Roles
 
@@ -36,28 +38,56 @@ The system has three hierarchical roles:
 
 ### Database Schema
 
-```typescript
-// User table with role field
-export const users = pgTable("user", {
-  // ... other fields
-  role: userRoleEnum("role").notNull().default("user"),
-});
+The user role is stored in the `user` table managed by Better Auth:
 
-// Role enum
+```typescript
+// src/db/schema.ts
+
+// Role enum (PostgreSQL)
 export const userRoleEnum = pgEnum("user_role", ["user", "editor", "admin"]);
+
+// User table with role field
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  // ... other Better Auth fields
+  role: userRoleEnum("role").default("user").notNull(),
+});
 ```
 
 ### Type System
 
+Better Auth configuration extends the user model:
+
 ```typescript
-// src/types/next-auth.d.ts
-// Extends NextAuth types to include role in session
-interface Session {
+// src/lib/auth.ts
+export const auth = betterAuth({
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: true,
+        defaultValue: "user",
+        input: false, // Security: can't be set on sign up
+      },
+    },
+  },
+});
+```
+
+Session type includes role automatically:
+
+```typescript
+// src/types/auth.d.ts
+type Session = {
   user: {
     id: string;
+    email: string;
+    name: string;
     role: "user" | "editor" | "admin";
-  } & DefaultSession["user"];
-}
+  };
+};
 ```
 
 ## Permission System
@@ -126,11 +156,11 @@ export default async function Page() {
 #### Direct Permission Checks
 
 ```tsx
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 
 export default async function Page() {
-  const session = await auth();
+  const session = await getSession();
 
   if (can(session, "manage_blog")) {
     // Show blog management UI
@@ -194,13 +224,29 @@ const PROTECTED_ROUTES = {
 ```typescript
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireAuth } from "@/lib/rbac";
 
 export async function adminAction() {
-  const session = await auth();
+  // Automatically checks authentication and role
+  const session = await requireAuth(["admin"]);
 
-  if (session?.user?.role !== "admin") {
-    throw new Error("Unauthorized");
+  // If we reach here, user is authenticated and has admin role
+  // Perform admin action
+}
+```
+
+**Alternative with manual check:**
+
+```typescript
+"use server";
+
+import { getSession } from "@/lib/auth";
+
+export async function adminAction() {
+  const session = await getSession();
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized: admin role required");
   }
 
   // Perform admin action
@@ -284,14 +330,11 @@ The RBAC system implements multiple layers of security:
 ### Example Multi-Layer Protection
 
 ```tsx
-// 1. Middleware blocks route access
+// 1. Middleware blocks route access (cookie check)
+
 // 2. Page component checks permission
 export default async function AdminPage() {
-  const session = await auth();
-
-  if (session?.user?.role !== "admin") {
-    redirect("/dashboard");
-  }
+  const session = await requireAuth(["admin"]);
 
   // 3. RoleGate provides additional UI protection
   return (
@@ -304,11 +347,7 @@ export default async function AdminPage() {
 // 4. Server action validates before execution
 async function adminAction() {
   "use server";
-  const session = await auth();
-
-  if (session?.user?.role !== "admin") {
-    throw new Error("Unauthorized");
-  }
+  const session = await requireAuth(["admin"]);
 
   // Perform action
 }
@@ -342,9 +381,9 @@ UPDATE "user" SET role = 'admin' WHERE email = 'your-email@example.com';
 
 ### Permission Checks Not Working
 
-1. Ensure `auth()` is being called in server components
-2. Verify role is included in session (check `src/lib/auth.ts` callbacks)
-3. Check TypeScript types are properly extended (`src/types/next-auth.d.ts`)
+1. Ensure `getSession()` is being called in server components
+2. Verify role is included in session (check Better Auth `user.additionalFields` in `src/lib/auth.ts`)
+3. Check TypeScript types are properly extended (`src/types/auth.d.ts`)
 
 ### Middleware Redirects Incorrectly
 
@@ -376,10 +415,11 @@ src/
 │   └── users/
 │       └── actions.ts           # User management actions
 ├── lib/
-│   ├── auth.ts                  # Auth.js configuration
+│   ├── auth.ts                  # Better Auth configuration
+│   ├── rbac.ts                  # requireAuth helper
 │   └── permissions.ts           # Permission utilities
 ├── types/
-│   └── next-auth.d.ts          # Type extensions
+│   └── auth.d.ts               # Better Auth type extensions
 ├── db/
 │   └── schema.ts               # Database schema with roles
 └── middleware.ts               # Route protection

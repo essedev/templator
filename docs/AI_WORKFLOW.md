@@ -1,541 +1,301 @@
-# AI Workflow — Come lavorare con questo template
+# AI Workflow — Working with Templator
 
-Questo template è ottimizzato per sviluppo con AI (Cursor, Claude Code, GitHub Copilot, ecc.).
+This template is optimized for AI-assisted development (Cursor, Claude Code, GitHub Copilot, etc.).
 
-## Perché questo template è AI-friendly
+## Why This Template is AI-Friendly
 
-1. **Convenzioni naming rigide** → l'AI sa esattamente dove cercare/creare file
-2. **Pattern ripetibili** → ogni feature segue la stessa struttura
-3. **Type-safety pervasiva** → TypeScript + Zod + Drizzle types guidano l'AI verso codice corretto
-4. **Documentazione inline** → JSDoc e commenti che l'AI legge
-5. **Validation loop** → ESLint/TypeScript catch errori automaticamente
-6. **Drizzle TypeScript-first** → AI genera DB queries con autocomplete perfetto
+1. **Strict naming conventions** → AI knows exactly where to find/create files
+2. **Repeatable patterns** → Every feature follows the same structure
+3. **Pervasive type-safety** → TypeScript + Zod + Drizzle guide AI to correct code
+4. **Inline documentation** → JSDoc and comments that AI reads
+5. **Validation loop** → ESLint/TypeScript catch errors automatically
+6. **Drizzle TypeScript-first** → AI generates DB queries with perfect autocomplete
 
-## Pattern: Aggiungere una nuova feature
+## Feature Structure (Always Follow This)
 
-Ogni feature segue **sempre** questa struttura:
+Every feature **must** follow this structure:
 
 ```
 src/features/[feature-name]/
-  ├── actions.ts       # Server Actions (export named functions)
-  ├── schema.ts        # Zod schemas (export const schemas)
-  ├── [Feature]*.tsx   # Componenti React
-  └── README.md        # Documentazione feature (opzionale ma consigliato)
+  ├── actions.ts       # Server Actions (named function exports)
+  ├── schema.ts        # Zod schemas (const exports)
+  ├── [Feature]*.tsx   # React components
+  └── README.md        # Feature documentation (follow blog/README.md template)
 ```
 
-### Esempio: Feature "Newsletter"
+**Reference Implementation:** See `src/features/blog/` and `src/features/contact/` for complete examples.
 
-**Prompt per AI:**
+## Validation Loop (Required After Every Change)
 
-> "Aggiungi una feature newsletter seguendo la struttura in `features/contact`. Include:
->
-> - Drizzle table `newsletterSubscribers` (email, status, subscribedAt)
-> - Server Action per subscribe/unsubscribe
-> - Form con validazione Zod
->
-> Dopo l'implementazione, esegui `pnpm format && pnpm lint && pnpm typecheck`."
-
-**L'AI creerà:**
-
-1. **Schema Drizzle** (`src/db/schema.ts`)
-
-```typescript
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
-
-export const newsletterSubscribers = pgTable("newsletter_subscriber", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  email: text("email").notNull().unique(),
-  status: text("status").notNull().default("active"),
-  subscribedAt: timestamp("subscribedAt", { mode: "date" }).notNull().defaultNow(),
-});
-```
-
-2. **Schema Zod** (`src/features/newsletter/schema.ts`)
-
-```typescript
-import { z } from "zod";
-
-export const newsletterSchema = z.object({
-  email: z.string().email("Email non valida"),
-});
-
-export type NewsletterFormData = z.infer<typeof newsletterSchema>;
-```
-
-3. **Server Actions** (`src/features/newsletter/actions.ts`)
-
-```typescript
-"use server";
-
-import { db } from "@/db";
-import { newsletterSubscribers } from "@/db/schema";
-import { newsletterSchema } from "./schema";
-import { eq } from "drizzle-orm";
-
-export async function subscribeNewsletter(input: unknown) {
-  const { email } = newsletterSchema.parse(input);
-
-  // Check if exists
-  const [existing] = await db
-    .select()
-    .from(newsletterSubscribers)
-    .where(eq(newsletterSubscribers.email, email))
-    .limit(1);
-
-  if (existing) {
-    // Update status
-    await db
-      .update(newsletterSubscribers)
-      .set({ status: "active" })
-      .where(eq(newsletterSubscribers.email, email));
-  } else {
-    // Insert new
-    await db.insert(newsletterSubscribers).values({ email, status: "active" });
-  }
-}
-```
-
-4. **Form Component** (`src/features/newsletter/NewsletterForm.tsx`)
-
-```typescript
-"use client";
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { subscribeNewsletter } from "./actions";
-import { newsletterSchema, type NewsletterFormData } from "./schema";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-
-export function NewsletterForm() {
-  const [success, setSuccess] = useState(false);
-  const { register, handleSubmit, formState, reset } = useForm<NewsletterFormData>({
-    resolver: zodResolver(newsletterSchema),
-  });
-
-  const onSubmit = async (data: NewsletterFormData) => {
-    await subscribeNewsletter(data);
-    setSuccess(true);
-    reset();
-  };
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2">
-      <Input placeholder="Email" {...register("email")} />
-      <Button type="submit" disabled={formState.isSubmitting}>
-        Iscriviti
-      </Button>
-      {success && <p className="text-sm text-green-600">Iscritto!</p>}
-    </form>
-  );
-}
-```
-
-5. **Migration** (automatica)
+After implementing **any** feature, always run:
 
 ```bash
-pnpm db:generate  # Genera migration
-pnpm db:push      # Applica al database
+pnpm format      # Auto-format code
+pnpm lint        # Check for linting errors
+pnpm typecheck   # Verify TypeScript types
 ```
 
-## Validation Loop (SEMPRE dopo implementazione)
+If errors occur, read them and fix before proceeding. TypeScript errors are especially important - they catch bugs before runtime.
 
-Dopo ogni feature, l'AI deve eseguire:
+## Claude Commands for Version Management
 
-```bash
-pnpm format      # Formattazione
-pnpm lint        # ESLint check
-pnpm typecheck   # TypeScript check
-```
+### `/changelog` - Update CHANGELOG.md
 
-Se ci sono errori, l'AI li legge e corregge automaticamente.
+Reviews recent work and updates `CHANGELOG.md` with changes in the `[Unreleased]` section.
 
-**Prompt template per AI:**
+**How it works:**
 
-> "Dopo l'implementazione, esegui `pnpm format && pnpm lint && pnpm typecheck`. Se ci sono errori, correggili prima di confermare completamento."
+1. Checks recent changes with `git status` and `git diff`
+2. Categorizes changes: Added, Changed, Fixed, Removed, Security
+3. Updates `CHANGELOG.md` in `[Unreleased]` section
+4. Follows existing changelog style
 
-## Comandi Claude per gestione versioni
+**When to use:** After completing a feature or fix, before creating a release.
 
-Questo template include comandi slash Claude per automatizzare changelog e release:
-
-### `/changelog` - Aggiorna CHANGELOG.md
-
-Rivede il lavoro recente e aggiorna `CHANGELOG.md` con le modifiche nella sezione `[Unreleased]`.
-
-**Come funziona:**
-
-1. Controlla modifiche recenti con `git status` e `git diff`
-2. Identifica il tipo di cambiamenti:
-   - **Added**: Nuove funzionalità
-   - **Changed**: Modifiche a funzionalità esistenti
-   - **Fixed**: Bug fix
-   - **Removed**: Rimozione di feature o file
-   - **Security**: Miglioramenti alla sicurezza
-3. Aggiorna `CHANGELOG.md` nella sezione `[Unreleased]`
-4. Segue lo stile esistente del changelog
-
-**Quando usarlo:**
-
-- Dopo aver completato una feature o fix
-- Prima di creare una release
-- Per tenere traccia di cosa è cambiato durante lo sviluppo
-
-**Esempio d'uso:**
+**Example:**
 
 ```bash
-# Dopo aver implementato una feature
+# After implementing a feature
 /changelog
 ```
 
-### `/release` - Crea nuova versione
+### `/release` - Create New Version
 
-Prepara e rilascia una nuova versione convertendo `[Unreleased]` in una release versionata con git tag.
+Prepares and releases a new version by converting `[Unreleased]` to a versioned release with git tag.
 
-**Come funziona:**
+**How it works:**
 
-1. Chiede il numero di versione (es. `0.1.2`, `1.0.0`)
-2. Verifica che esista una sezione `[Unreleased]` con modifiche
-3. Aggiorna `CHANGELOG.md`:
-   - Rinomina `[Unreleased]` a `[x.y.z] - YYYY-MM-DD`
-   - Crea una nuova sezione `[Unreleased]` vuota
-4. Mostra le modifiche e chiede conferma
-5. Crea commit e tag git:
+1. Asks for version number (e.g., `0.1.2`, `1.0.0`)
+2. Verifies `[Unreleased]` section has changes
+3. Updates `CHANGELOG.md`:
+   - Renames `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`
+   - Creates new empty `[Unreleased]` section
+4. Shows changes and asks for confirmation
+5. Creates commit and git tag:
    ```bash
    git add CHANGELOG.md
    git commit -m "chore: release vx.y.z"
    git tag -a vx.y.z -m "Release x.y.z"
    ```
-6. Chiede se vuoi fare push (opzionale)
+6. Asks if you want to push (optional)
 
-**Quando usarlo:**
+**When to use:** When ready to release a new version after updating changelog.
 
-- Quando sei pronto a rilasciare una nuova versione
-- Dopo aver aggiornato il changelog con `/changelog`
-- Per creare tag git utilizzabili per GitHub releases
-
-**Esempio workflow completo:**
+**Complete workflow:**
 
 ```bash
-# 1. Dopo aver completato le feature
+# 1. After completing features
 /changelog
 
-# 2. Quando sei pronto per il release
+# 2. When ready for release
 /release
-# → Specifica versione: 0.2.0
-# → Conferma modifiche
-# → Scegli se fare push
+# → Specify version: 0.2.0
+# → Confirm changes
+# → Choose whether to push
 
-# 3. (Opzionale) Push manuale
+# 3. (Optional) Manual push
 git push && git push --tags
 ```
 
-**Best practice:**
+**Best practice - Semantic Versioning:**
 
-- Usa `/changelog` frequentemente durante lo sviluppo
-- Usa `/release` solo quando hai un set di modifiche pronte per produzione
-- Segui [Semantic Versioning](https://semver.org/):
-  - **MAJOR** (1.0.0): Breaking changes
-  - **MINOR** (0.1.0): Nuove feature backward-compatible
-  - **PATCH** (0.0.1): Bug fixes
+- **MAJOR** (1.0.0): Breaking changes
+- **MINOR** (0.1.0): New features (backward-compatible)
+- **PATCH** (0.0.1): Bug fixes
 
-## Pattern comuni
+## Key Conventions
 
-### 1. Aggiungere una pagina protetta
+### File Naming
 
-**Prompt:**
+- **React components:** `PascalCase.tsx` (e.g., `ContactForm.tsx`)
+- **Utilities/lib:** `kebab-case.ts` (e.g., `format-date.ts`)
+- **Route folders:** `kebab-case` (e.g., `app/blog-post/[slug]/page.tsx`)
+- **Feature folders:** `kebab-case` (e.g., `features/user-profile/`)
 
-> "Crea una pagina protetta in `app/settings/page.tsx`. Usa `auth()` da `@/lib/auth` per verificare sessione. Se non loggato, redirect a `/login`."
+### Import Paths
 
-**Output:**
+**Always use absolute imports** with `@/` alias:
 
 ```typescript
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+// ✅ Correct
+import { Button } from "@/components/ui/button";
+import { subscribeNewsletter } from "@/features/newsletter/actions";
 
-export default async function SettingsPage() {
-  const session = await auth();
+// ❌ Wrong
+import { Button } from "../../components/ui/button";
+```
 
-  if (!session?.user) {
-    redirect("/login");
-  }
+### Standard Feature Files
 
-  return (
-    <div className="container py-12">
-      <h1>Settings</h1>
-      <p>Logged in as: {session.user.email}</p>
-    </div>
-  );
+Every feature has the same structure:
+
+```typescript
+// actions.ts - Server Actions
+"use server";
+import { db } from "@/db";
+import { myTable } from "@/db/schema";
+import { mySchema } from "./schema";
+
+export async function myAction(input: unknown) {
+  const data = mySchema.parse(input);
+  await db.insert(myTable).values(data);
 }
 ```
 
-### 2. Aggiungere un endpoint API pubblico
-
-**Prompt:**
-
-> "Crea un endpoint API POST `/api/webhook` che accetta JSON. Valida con Zod schema. Log errori."
-
-**Output** (`src/app/api/webhook/route.ts`):
-
 ```typescript
-import { NextRequest, NextResponse } from "next/server";
+// schema.ts - Zod validation
 import { z } from "zod";
 
-const schema = z.object({
-  event: z.string(),
-  data: z.record(z.unknown()),
+export const mySchema = z.object({
+  email: z.string().email("Invalid email"),
+  name: z.string().min(1, "Name required"),
 });
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { event, data } = schema.parse(body);
-
-    // Process webhook
-    console.log("Webhook received:", event, data);
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-}
+export type MyFormData = z.infer<typeof mySchema>;
 ```
 
-### 3. Aggiungere un componente UI riusabile
+## Common Patterns
 
-**Prompt:**
+### 1. Adding a Protected Route
 
-> "Crea un componente `PageHeader` in `components/common/PageHeader.tsx`. Props: title (string), description (string optional). Usa Tailwind."
+Tell AI: "Create a protected page at `app/admin/settings/page.tsx` requiring admin role using `requireAuth()`"
 
-**Output:**
+**What AI will generate:**
 
 ```typescript
-interface PageHeaderProps {
-  title: string;
-  description?: string;
-}
+import { requireAuth } from "@/lib/rbac";
 
-export function PageHeader({ title, description }: PageHeaderProps) {
-  return (
-    <div className="border-b pb-6 mb-8">
-      <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
-      {description && (
-        <p className="text-muted-foreground mt-2">{description}</p>
-      )}
-    </div>
-  );
+export default async function SettingsPage() {
+  const session = await requireAuth(["admin"]);
+
+  return <div>Settings content...</div>;
 }
 ```
 
-## Come l'AI legge questo template
+### 2. Adding a New Database Table
 
-### 1. Schema Drizzle
+Tell AI: "Add a `comments` table to `src/db/schema.ts` with fields: userId (FK), postId (FK), content (text), createdAt. Then run `pnpm db:generate && pnpm db:push`"
 
-L'AI legge i commenti JSDoc in `src/db/schema.ts`:
+### 3. Creating a Form with Server Action
+
+Tell AI: "Create a newsletter subscription feature in `src/features/newsletter/` following the structure in `features/contact/`. Include schema.ts, actions.ts, and NewsletterForm.tsx"
+
+## Documentation Structure
+
+When AI needs context, it should read:
+
+1. **Feature-specific:** `src/features/[name]/README.md`
+2. **Project structure:** `docs/ARCHITECTURE.md`
+3. **Auth system:** `docs/AUTHENTICATION.md` (basic) or `docs/AUTHENTICATION_ADVANCED.md` (advanced)
+4. **RBAC system:** `docs/RBAC.md`
+5. **Database schema:** `src/db/schema.ts` (complete JSDoc)
+6. **Middleware:** `docs/MIDDLEWARE.md`
+7. **Email system:** `docs/EMAIL_SYSTEM.md`
+8. **Deployment:** `docs/DEPLOYMENT.md`
+9. **Stack decisions:** `docs/STACK.md`
+10. **Step-by-step guides:** `docs/recipes/`
+
+## Architectural Preferences
+
+### 1. Server Actions (Preferred)
+
+For CRUD operations, use Server Actions in `features/[name]/actions.ts`:
 
 ```typescript
-/**
- * Utente del sistema. Gestito da NextAuth.
- * Relazioni: sessions, accounts
- */
-export const users = pgTable("user", {
-  id: text("id").primaryKey(),
-
-  /** Email (unique, usata per login) */
-  email: text("email").notNull().unique(),
-});
-```
-
-→ L'AI capisce cosa fa ogni table e come usarla.
-
-### 2. JSDoc nei file TypeScript
-
-```typescript
-/**
- * Server Action: salva messaggio di contatto.
- * @throws ZodError se validazione fallisce
- */
-export async function sendContactMessage(input: unknown) {
-  // ...
+"use server";
+export async function myAction(input: unknown) {
+  const data = mySchema.parse(input);
+  await db.insert(table).values(data);
 }
 ```
 
-→ L'AI sa cosa fa la funzione e come gestire errori.
+**When NOT to use Server Actions:**
 
-### 3. README nelle features
+- Public API endpoints (for mobile apps, webhooks)
+- Non-JSON responses (file downloads, streaming)
+- Complex rate limiting/middleware
 
-Ogni feature ha `README.md` che spiega:
+### 2. Data Fetching Priority
 
-- Cosa fa
-- Come estenderla
-- Dipendenze
+1. **Server Components** (fetch directly in async component) - preferred
+2. **Server Actions** (for form submissions)
+3. **TanStack Query** (only if caching/polling needed)
 
-→ L'AI legge il README prima di modificare la feature.
+### 3. State Management Priority
 
-### 4. Esempi in EXAMPLES.md
+1. **Server Components** (no client state needed) - preferred
+2. **useState** (local component state)
+3. **Context** (shared parent-children state)
+4. **Zustand** (only for global persistent state)
 
-L'AI usa gli esempi in `docs/EXAMPLES.md` come template per nuovo codice.
+## Effective Prompts
 
-## Prompt efficaci per questo template
+### ✅ Good Prompts (Specific)
 
-### ✅ Prompt buoni (specifici)
+- "Add a 'comments' feature following `features/contact` structure. Each comment has: userId (FK), postId (FK), content (text), status (pending/approved/rejected), createdAt. Use Drizzle ORM."
+- "Create `/blog/[slug]` page that fetches post from database with Drizzle. Show 404 if post doesn't exist. Use Server Component."
+- "Add dark mode toggle in Navbar using next-themes and ThemeToggle component in `components/layout/`"
 
-> "Aggiungi una feature 'comments' seguendo la struttura in `features/contact`. Ogni comment ha: userId (FK), postId (FK), content (text), createdAt. Include moderazione (status: pending/approved/rejected). Usa Drizzle ORM."
+### ❌ Vague Prompts (Avoid)
 
-> "Crea una pagina `/blog/[slug]` che fetch post da database con Drizzle. Se post non esiste, mostra 404. Usa Server Component."
-
-> "Aggiungi dark mode toggle nella Navbar. Usa `next-themes` e componente `ThemeToggle` in `components/layout/`."
-
-### ❌ Prompt vaghi (evitare)
-
-> "Aggiungi un sistema di commenti" ← troppo vago, l'AI deve indovinare
-
-> "Crea una pagina blog" ← manca struttura, routing, data source
-
-> "Implementa auth" ← auth già presente, specifica cosa serve
+- "Add a comment system" ← too vague, AI must guess structure
+- "Create a blog page" ← missing routing, data source, requirements
+- "Implement auth" ← auth already exists, be specific about what you need
 
 ## Troubleshooting
 
-### L'AI crea file nella posizione sbagliata
+### AI creates files in wrong location
 
-**Soluzione:** Specifica sempre il path completo nel prompt.
+**Solution:** Always specify full path in prompt.
 
 ```
-❌ "Crea ContactForm"
-✅ "Crea src/features/contact/ContactForm.tsx"
+❌ "Create ContactForm"
+✅ "Create src/features/contact/ContactForm.tsx"
 ```
 
-### L'AI usa import relativi
+### AI uses relative imports
 
-**Soluzione:** Ricordagli di usare alias `@/`.
+**Solution:** Remind AI to use `@/` alias.
 
 ```
 ❌ import { Button } from "../../components/ui/button"
 ✅ import { Button } from "@/components/ui/button"
 ```
 
-### L'AI non esegue validation loop
+### AI doesn't run validation loop
 
-**Soluzione:** Aggiungi sempre nel prompt:
+**Solution:** Always include in prompt: "After implementing, run `pnpm format && pnpm lint && pnpm typecheck`"
 
-> "Dopo l'implementazione, esegui `pnpm format && pnpm lint && pnpm typecheck`."
+### TypeScript errors after generation
 
-### TypeScript errors dopo generazione
+**Solution:** Ask AI: "Read the TypeScript errors and fix them. Then rerun `pnpm typecheck`"
 
-**Soluzione:** Chiedi all'AI:
+## Best Practices for Prompts
 
-> "Leggi gli errori TypeScript e correggili. Poi rilancia `pnpm typecheck`."
+1. **Reference existing features** → "following the structure in `features/contact`"
+2. **Specify full paths** → `src/features/[name]/[file].tsx`
+3. **Request validation loop** → "run format, lint, typecheck"
+4. **Use template terminology** → "Server Action", "Zod schema", "feature folder"
+5. **Ask for one step at a time** → not "implement auth + dashboard + blog"
 
-## Best Practices per prompt
+## Working with Better Auth
 
-1. **Riferisci feature esistenti** → "seguendo la struttura in `features/contact`"
-2. **Specifica path completi** → `src/features/[name]/[file].tsx`
-3. **Chiedi validation loop** → "esegui format, lint, typecheck"
-4. **Usa terminologia del template** → "Server Action", "schema Zod", "feature folder"
-5. **Chiedi un solo step alla volta** → non "implementa auth + dashboard + blog"
+When working with authentication:
 
-## Estendere il template
+- **Get session:** `const session = await getSession()`
+- **Require auth:** `const session = await requireAuth(["admin"])`
+- **Client hook:** `const { data: session } = useSession()`
+- **Sign out:** `await signOut()`
 
-### Aggiungere libreria opzionale
+See `docs/AUTHENTICATION.md` for complete auth documentation.
 
-**Esempio: Aggiungere Framer Motion**
+## Resources for AI
 
-```bash
-pnpm add framer-motion
-```
+When AI works on this template, it has access to:
 
-Poi crea wrapper in `components/common/AnimatedDiv.tsx`:
+1. **Complete docs** in `docs/` folder
+2. **Inline JSDoc** in `src/db/schema.ts` with workflow descriptions
+3. **Feature examples** in `src/features/blog/` and `src/features/contact/`
+4. **Recipes** in `docs/recipes/` for step-by-step guides
 
-```typescript
-"use client";
-
-import { motion, type HTMLMotionProps } from "framer-motion";
-
-export function AnimatedDiv(props: HTMLMotionProps<"div">) {
-  return <motion.div {...props} />;
-}
-```
-
-### Aggiungere provider OAuth
-
-**Prompt:**
-
-> "Aggiungi Discord OAuth in `lib/auth.ts`. Richiede env vars: DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET."
-
-**Output:**
-
-```typescript
-// lib/auth.ts
-import Discord from "next-auth/providers/discord";
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  // ... config esistente
-  providers: [
-    Credentials({ ... }),
-    GitHub({ ... }),
-    Google({ ... }),
-    Discord({
-      clientId: process.env.DISCORD_CLIENT_ID!,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-    }),
-  ],
-});
-```
-
-## Template di prompt pronti all'uso
-
-### Feature completa
-
-```
-Aggiungi una feature "[nome]" in src/features/[nome]/:
-- Drizzle table [tableName] in src/db/schema.ts con campi: [lista campi]
-- Schema Zod in schema.ts
-- Server Action [actionName] in actions.ts (usa Drizzle per queries)
-- Form component [Name]Form.tsx con React Hook Form
-- README.md che spiega la feature
-
-Segui la struttura in features/contact come riferimento.
-Dopo l'implementazione, esegui pnpm db:generate && pnpm db:push per applicare schema.
-Poi esegui pnpm format && pnpm lint && pnpm typecheck.
-```
-
-### Pagina protetta
-
-```
-Crea una pagina protetta in src/app/[nome]/page.tsx.
-Usa auth() da @/lib/auth per verificare sessione.
-Se non loggato, redirect a /login.
-Mostra [contenuto pagina].
-```
-
-### Componente UI
-
-```
-Crea un componente [Nome] in src/components/[category]/[Nome].tsx.
-Props: [lista props con tipi].
-Style: Tailwind, usa variabili theme (bg-background, text-foreground).
-```
-
-### API endpoint
-
-```
-Crea un endpoint API [METHOD] /api/[path] in src/app/api/[path]/route.ts.
-Input: [schema Zod]
-Output: [formato JSON]
-Error handling: try/catch con log e response appropriato.
-```
-
-## Risorse per l'AI
-
-Quando l'AI lavora su questo template, ha accesso a:
-
-1. **Documentazione completa** in `docs/`
-2. **Esempi funzionanti** in `docs/EXAMPLES.md`
-3. **Recipes step-by-step** in `docs/recipes/`
-4. **Schema Drizzle commentato** in `src/db/schema.ts`
-5. **Feature di riferimento** in `src/features/contact/` e `src/features/blog/`
-
-L'AI può leggere questi file per comprendere pattern e replicarli accuratamente.
+The AI should read these files to understand patterns and replicate them accurately.

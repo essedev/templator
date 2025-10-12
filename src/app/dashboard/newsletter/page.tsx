@@ -1,30 +1,26 @@
 import { db } from "@/db";
-import { newsletterSubscribers } from "@/db/schema";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { newsletterSubscriber } from "@/db/schema";
+import { requireAuth } from "@/lib/rbac";
 import { desc } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/common";
 
 /**
- * Dashboard newsletter page.
+ * Dashboard newsletter page (Editor/Admin only).
  * Mostra tutti i subscribers della newsletter.
  */
 export const dynamic = "force-dynamic";
 
 export default async function NewsletterPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  // Richiede ruolo editor o admin
+  await requireAuth(["editor", "admin"]);
 
   // Fetch tutti i subscribers
   const subscribers = await db
     .select()
-    .from(newsletterSubscribers)
-    .orderBy(desc(newsletterSubscribers.subscribedAt));
+    .from(newsletterSubscriber)
+    .orderBy(desc(newsletterSubscriber.subscribedAt));
 
   const activeSubscribers = subscribers.filter((s) => s.status === "active");
   const unsubscribed = subscribers.filter((s) => s.status === "unsubscribed");

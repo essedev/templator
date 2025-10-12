@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { posts, users } from "@/db/schema";
+import { post, user } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -23,13 +23,13 @@ interface BlogPostPageProps {
 
 export async function generateMetadata({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const [post] = await db
+  const [postData] = await db
     .select()
-    .from(posts)
-    .where(and(eq(posts.slug, slug), eq(posts.published, true)))
+    .from(post)
+    .where(and(eq(post.slug, slug), eq(post.published, true)))
     .limit(1);
 
-  if (!post) {
+  if (!postData) {
     return createMetadata({
       title: "Post Not Found",
       noIndex: true,
@@ -37,10 +37,10 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
   }
 
   return createMetadata({
-    title: post.title,
-    description: post.excerpt || `Read ${post.title} on Templator blog`,
-    image: post.coverImage || undefined,
-    path: `/blog/${post.slug}`,
+    title: postData.title,
+    description: postData.excerpt || `Read ${postData.title} on Templator blog`,
+    image: postData.coverImage || undefined,
+    path: `/blog/${postData.slug}`,
   });
 }
 
@@ -50,19 +50,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   // Fetch post con join su author
   const [postData] = await db
     .select({
-      post: posts,
-      author: users,
+      post: post,
+      author: user,
     })
-    .from(posts)
-    .leftJoin(users, eq(posts.authorId, users.id))
-    .where(and(eq(posts.slug, slug), eq(posts.published, true)))
+    .from(post)
+    .leftJoin(user, eq(post.authorId, user.id))
+    .where(and(eq(post.slug, slug), eq(post.published, true)))
     .limit(1);
 
   if (!postData) {
     notFound();
   }
 
-  const { post, author } = postData;
+  const { post: postItem, author } = postData;
 
   return (
     <Section>
@@ -80,8 +80,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="flex items-center gap-2 mb-4">
             <Badge variant="secondary">Published</Badge>
             <time className="text-sm text-muted-foreground">
-              {post.publishedAt
-                ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+              {postItem.publishedAt
+                ? new Date(postItem.publishedAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -90,9 +90,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </time>
           </div>
 
-          <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+          <h1 className="text-4xl font-bold mb-4">{postItem.title}</h1>
 
-          {post.excerpt && <p className="text-xl text-muted-foreground">{post.excerpt}</p>}
+          {postItem.excerpt && <p className="text-xl text-muted-foreground">{postItem.excerpt}</p>}
 
           {/* Author */}
           {author && (
@@ -111,11 +111,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <Separator className="mb-8" />
 
         {/* Cover image */}
-        {post.coverImage && (
+        {postItem.coverImage && (
           <div className="mb-8 relative w-full aspect-video">
             <Image
-              src={post.coverImage}
-              alt={post.title}
+              src={postItem.coverImage}
+              alt={postItem.title}
               fill
               className="object-cover rounded-lg"
               sizes="(max-width: 768px) 100vw, 800px"
@@ -127,7 +127,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {/* Content */}
         <div className="prose prose-slate dark:prose-invert max-w-none">
           {/* Simple content rendering - can be replaced with markdown renderer */}
-          <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: post.content }} />
+          <div
+            className="whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: postItem.content }}
+          />
         </div>
 
         <Separator className="my-8" />

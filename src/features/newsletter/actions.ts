@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { newsletterSubscribers, verificationTokens } from "@/db/schema";
+import { newsletterSubscriber, newsletterVerification } from "@/db/schema";
 import { newsletterSchema } from "./schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { sendEmail } from "@/lib/emails/send";
 import { SubscribeConfirmTemplate } from "@/lib/emails/templates/newsletter/subscribe-confirm";
 import { NewsletterWelcomeTemplate } from "@/lib/emails/templates/newsletter/welcome";
@@ -31,8 +31,8 @@ export async function subscribeToNewsletter(input: unknown) {
     // 2. Check if already subscribed
     const [existing] = await db
       .select()
-      .from(newsletterSubscribers)
-      .where(eq(newsletterSubscribers.email, data.email))
+      .from(newsletterSubscriber)
+      .where(eq(newsletterSubscriber.email, data.email))
       .limit(1);
 
     if (existing) {
@@ -46,12 +46,12 @@ export async function subscribeToNewsletter(input: unknown) {
       if (existing.status === "pending") {
         // Resend confirmation email
         const token = crypto.randomUUID();
-        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-        await db.insert(verificationTokens).values({
-          identifier: `newsletter:${data.email}`,
+        await db.insert(newsletterVerification).values({
+          email: data.email,
           token,
-          expires,
+          expiresAt,
         });
 
         const confirmUrl = `${NEXTAUTH_URL}/newsletter/confirm/${token}`;
@@ -73,22 +73,22 @@ export async function subscribeToNewsletter(input: unknown) {
       // Reactivate if was unsubscribed
       if (existing.status === "unsubscribed") {
         const token = crypto.randomUUID();
-        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         await db
-          .update(newsletterSubscribers)
+          .update(newsletterSubscriber)
           .set({
             status: "pending",
             subscribedAt: new Date(),
             confirmedAt: null,
             unsubscribedAt: null,
           })
-          .where(eq(newsletterSubscribers.email, data.email));
+          .where(eq(newsletterSubscriber.email, data.email));
 
-        await db.insert(verificationTokens).values({
-          identifier: `newsletter:${data.email}`,
+        await db.insert(newsletterVerification).values({
+          email: data.email,
           token,
-          expires,
+          expiresAt,
         });
 
         const confirmUrl = `${NEXTAUTH_URL}/newsletter/confirm/${token}`;
@@ -109,19 +109,19 @@ export async function subscribeToNewsletter(input: unknown) {
     }
 
     // 3. Create new pending subscriber
-    await db.insert(newsletterSubscribers).values({
+    await db.insert(newsletterSubscriber).values({
       email: data.email,
       status: "pending",
     });
 
     // 4. Create verification token and send confirmation email
     const token = crypto.randomUUID();
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await db.insert(verificationTokens).values({
-      identifier: `newsletter:${data.email}`,
+    await db.insert(newsletterVerification).values({
+      email: data.email,
       token,
-      expires,
+      expiresAt,
     });
 
     const confirmUrl = `${NEXTAUTH_URL}/newsletter/confirm/${token}`;
@@ -167,8 +167,8 @@ export async function confirmNewsletterSubscription(token: string) {
     // 1. Find verification token
     const [verification] = await db
       .select()
-      .from(verificationTokens)
-      .where(and(eq(verificationTokens.token, token)))
+      .from(newsletterVerification)
+      .where(eq(newsletterVerification.token, token))
       .limit(1);
 
     if (!verification) {
@@ -179,35 +179,27 @@ export async function confirmNewsletterSubscription(token: string) {
     }
 
     // Check if expired
-    if (verification.expires < new Date()) {
-      await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+    if (verification.expiresAt < new Date()) {
+      await db.delete(newsletterVerification).where(eq(newsletterVerification.token, token));
       return {
         success: false,
         error: "Confirmation link has expired. Please subscribe again.",
       };
     }
 
-    // Extract email from identifier (format: "newsletter:email@example.com")
-    if (!verification.identifier.startsWith("newsletter:")) {
-      return {
-        success: false,
-        error: "Invalid confirmation token.",
-      };
-    }
-
-    const email = verification.identifier.replace("newsletter:", "");
+    const email = verification.email;
 
     // 2. Update subscriber status to active
     await db
-      .update(newsletterSubscribers)
+      .update(newsletterSubscriber)
       .set({
         status: "active",
         confirmedAt: new Date(),
       })
-      .where(eq(newsletterSubscribers.email, email));
+      .where(eq(newsletterSubscriber.email, email));
 
     // 3. Delete verification token (one-time use)
-    await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
+    await db.delete(newsletterVerification).where(eq(newsletterVerification.token, token));
 
     // 4. Send welcome email
     const unsubscribeUrl = `${NEXTAUTH_URL}/newsletter/unsubscribe?email=${encodeURIComponent(email)}`;
@@ -246,8 +238,8 @@ export async function unsubscribeFromNewsletter(email: string) {
 
     const [existing] = await db
       .select()
-      .from(newsletterSubscribers)
-      .where(eq(newsletterSubscribers.email, validatedEmail))
+      .from(newsletterSubscriber)
+      .where(eq(newsletterSubscriber.email, validatedEmail))
       .limit(1);
 
     if (!existing) {
@@ -258,12 +250,12 @@ export async function unsubscribeFromNewsletter(email: string) {
     }
 
     await db
-      .update(newsletterSubscribers)
+      .update(newsletterSubscriber)
       .set({
         status: "unsubscribed",
         unsubscribedAt: new Date(),
       })
-      .where(eq(newsletterSubscribers.email, validatedEmail));
+      .where(eq(newsletterSubscriber.email, validatedEmail));
 
     return {
       success: true,

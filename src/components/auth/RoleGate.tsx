@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { hasRole, type Role } from "@/lib/permissions";
 
 interface RoleGateProps {
@@ -19,7 +19,7 @@ interface RoleGateProps {
  * ```
  */
 export async function RoleGate({ children, allowedRoles, fallback = null }: RoleGateProps) {
-  const session = await auth();
+  const session = await getSession();
   const userRole = session?.user?.role;
 
   // Verifica se l'utente ha uno dei ruoli richiesti
