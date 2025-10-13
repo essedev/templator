@@ -29,7 +29,9 @@ export default function TermsPage() {
           </p>
 
           <h2>User Accounts</h2>
-          <p>When you create an account with us, you must provide accurate and complete information.</p>
+          <p>
+            When you create an account with us, you must provide accurate and complete information.
+          </p>
           <ul>
             <li>You are responsible for safeguarding your password</li>
             <li>You are responsible for all activities that occur under your account</li>

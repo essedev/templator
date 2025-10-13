@@ -55,6 +55,7 @@ Execute these steps autonomously:
    - Remind about any additional deployment steps if needed
 
 **Important**:
+
 - Only ask for confirmation ONCE at the beginning
 - Execute all subsequent steps automatically
 - If git push fails (e.g., no remote), inform user but don't fail the release

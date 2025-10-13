@@ -44,6 +44,7 @@ Execute these steps autonomously:
    - Keep consistent tone with existing entries
 
 **Important**:
+
 - Execute all steps automatically without asking for intermediate confirmations
 - Only show the user the final changelog diff
 - If there are no meaningful changes to document, inform the user

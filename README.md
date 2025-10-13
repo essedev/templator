@@ -10,6 +10,7 @@ AI-first Next.js template for rapid development with authentication, database, a
 ## 📋 Table of Contents
 
 - [Who Is This For?](#-who-is-this-for)
+- [Conscious Trade-offs & Known Limitations](#️-conscious-trade-offs--known-limitations)
 - [Tech Stack](#tech-stack)
 - [Features](#features)
 - [Quick Start](#quick-start)
@@ -34,6 +35,69 @@ AI-first Next.js template for rapid development with authentication, database, a
 - Teams requiring extensive testing infrastructure from day 1
 - Projects with highly custom authentication requirements
 - Applications needing complex multi-tenancy from the start
+- Real-time applications (WebSocket, live collaboration)
+- Heavy computation workloads (video processing, ML inference)
+
+## ⚠️ Conscious Trade-offs & Known Limitations
+
+This template prioritizes **speed and simplicity** for MVP development. Here's what you should know before choosing Templator:
+
+### What's NOT Included (By Design)
+
+**Testing Infrastructure**
+
+- No Vitest/Jest, Testing Library, or E2E tests
+- **Why**: 90% of MVPs don't need tests day 1. TypeScript + ESLint catch most bugs.
+- **When to add**: Before first paying customers or when team grows beyond 3 developers
+- See [docs/LIMITATIONS.md](docs/LIMITATIONS.md#testing-infrastructure) for migration guide
+
+**Error Monitoring & Analytics**
+
+- No Sentry, Axiom, or analytics integration
+- **Why**: Adds complexity and cost for early prototypes
+- **When to add**: Week 1 of production traffic
+- See [docs/LIMITATIONS.md](docs/LIMITATIONS.md#error-monitoring) for setup guide
+
+**Advanced Features**
+
+- ❌ WebSocket/real-time (Cloudflare Workers limitation)
+- ❌ File uploads (needs R2 bucket configuration)
+- ❌ Payment processing (Stripe integration needed)
+- ❌ Multi-tenancy (single-organization RBAC only)
+- ❌ Internationalization (English-only by default)
+- **Why**: Keep template focused, add these when business validated
+
+### Cloudflare Workers Constraints
+
+**Free Tier Limits** (100,000 requests/day):
+
+- 10ms CPU time per request
+- 128MB memory
+- 1MB response size
+- Good for: Content sites, forms, auth flows
+
+**Paid Tier** ($5/mo for 10M requests):
+
+- 30s CPU time (Workers Standard) or 15min (Workers Unbound)
+- Still 128MB memory
+- 25MB+ response size
+- Good for: API-heavy apps, complex queries
+
+**What Doesn't Work**: WebSocket, filesystem access, long-running background jobs
+
+See [docs/LIMITATIONS.md](docs/LIMITATIONS.md#cloudflare-workers-constraints) for workarounds and alternatives.
+
+### When NOT to Use Templator
+
+❌ **Enterprise with strict compliance** (SOC2, HIPAA day 1) → Use custom build or commercial starter
+❌ **Complex B2B SaaS** (multi-tenancy, teams, 10+ permission levels) → Fork and extend RBAC
+❌ **Real-time apps** (chat, multiplayer, live collaboration) → Consider [Supabase integration](docs/SUPABASE_INTEGRATION.md) or traditional server
+❌ **Heavy computation** (video encoding, ML inference) → Use serverless functions or dedicated servers
+
+✅ **Perfect for**: Content sites, SaaS MVPs, internal tools, API-first apps, landing pages with auth
+
+For detailed limitations and migration paths, see [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+For adding real-time features, see [docs/SUPABASE_INTEGRATION.md](docs/SUPABASE_INTEGRATION.md).
 
 ## Tech Stack
 
@@ -410,6 +474,8 @@ Or set in Cloudflare dashboard → Workers → Settings → Variables and Secret
 
 See `docs/` folder for detailed guides:
 
+- **`LIMITATIONS.md`** - Known limitations, platform constraints, and migration paths
+- **`SUPABASE_INTEGRATION.md`** - Adding real-time, storage, and enhanced database features with Supabase
 - **`AUTHENTICATION.md`** - Complete Better Auth guide (email/password, verification, password reset)
 - **`AUTHENTICATION_ADVANCED.md`** - Advanced auth flows (security, edge compatibility)
 - **`RBAC.md`** - Role-Based Access Control system (user/editor/admin)

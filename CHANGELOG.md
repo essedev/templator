@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-13
+
+### Added
+
+- Comprehensive limitations documentation (`docs/LIMITATIONS.md`) covering platform constraints, intentional design decisions, and migration paths
+- Supabase integration guide (`docs/SUPABASE_INTEGRATION.md`) for adding real-time features, enhanced storage, and database capabilities
+- Supabase recipe directory (`docs/recipes/supabase/`) with step-by-step integration examples
+- Detailed platform constraints section in README explaining Cloudflare Workers limitations and when NOT to use the template
+- Expanded AI workflow guide with constraint awareness, decision trees, and best practices for AI assistants
+
+### Changed
+
+- Enhanced `/changelog` command with more comprehensive analysis instructions and quality checks
+- Improved `/deploy` command documentation with better formatting and troubleshooting steps
+- Enhanced `/release` command with more detailed versioning guidance and edge case handling
+- Updated README structure with prominent trade-offs section and known limitations overview
+- Improved environment setup documentation with better markdown formatting and clearer tables
+- Standardized code formatting across deployment scripts and configuration files
+- Enhanced AI workflow documentation with 175+ lines of constraint-aware development guidance
+
+### Fixed
+
+- Markdown escaping for asterisks in CHANGELOG.md to prevent formatting issues
+- Code formatting consistency in `scripts/deploy.mjs` using Prettier standards
+- Import organization in dashboard components for better readability
+
 ## [0.3.1] - 2025-10-12
 
 ### Changed
@@ -20,12 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment setup documentation (`ENV_SETUP.md`) with comprehensive guide for local and production environment configuration
 - Terms of Service page (`src/app/terms/page.tsx`)
 - Privacy Policy page (`src/app/privacy/page.tsx`)
-- Automated deployment script (`scripts/deploy.mjs`) that handles NEXT_PUBLIC_* variables correctly during build
+- Automated deployment script (`scripts/deploy.mjs`) that handles NEXT*PUBLIC*\* variables correctly during build
 
 ### Changed
 
 - Simplified `.env.example` with clearer local development focus and reference to production config in wrangler.jsonc
-- Updated `wrangler.jsonc` with production environment variables (BETTER_AUTH_URL, EMAIL_*, etc.)
+- Updated `wrangler.jsonc` with production environment variables (BETTER*AUTH_URL, EMAIL*\*, etc.)
 - Improved `.gitignore` to better exclude build artifacts and environment files
 - Enhanced dashboard layout with comprehensive authentication documentation comments
 - Improved login page with hard redirect using `window.location.href` for reliable session establishment
@@ -182,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AI workflow guide
   - Recipe patterns
 
+[0.4.0]: https://github.com/yourusername/templator/releases/tag/v0.4.0
 [0.3.1]: https://github.com/yourusername/templator/releases/tag/v0.3.1
 [0.3.0]: https://github.com/yourusername/templator/releases/tag/v0.3.0
 [0.2.0]: https://github.com/yourusername/templator/releases/tag/v0.2.0

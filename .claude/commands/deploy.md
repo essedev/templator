@@ -50,12 +50,14 @@ Execute these steps:
      - Cloudflare dashboard for metrics and analytics
 
 **Important notes**:
+
 - Secrets are configured ONCE via `wrangler secret put` and persist across deployments
 - Public environment variables are in `wrangler.jsonc` (committed to git)
-- The deploy script handles NEXT_PUBLIC_* variables correctly during build
+- The deploy script handles NEXT*PUBLIC*\* variables correctly during build
 - Deployment typically takes 2-3 minutes for build + upload
 
 **Troubleshooting**:
+
 - If build fails: Check that all dependencies are installed (`npm install`)
 - If deploy fails: Verify Cloudflare authentication and account permissions
 - If app doesn't work: Verify secrets are set correctly with `npx wrangler secret list`

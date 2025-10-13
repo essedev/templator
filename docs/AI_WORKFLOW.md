@@ -328,6 +328,175 @@ When working with authentication:
 
 See `docs/AUTHENTICATION.md` for complete auth documentation.
 
+## Known Constraints (Important for AI)
+
+When developing features, AI assistants should be aware of these **intentional limitations** and platform constraints:
+
+### Platform Constraints (Cloudflare Workers)
+
+**What DOESN'T Work on Workers**:
+
+- ❌ **WebSocket**: No persistent connections (use Durable Objects or polling)
+- ❌ **Filesystem**: No `fs` module (use R2 for file storage)
+- ❌ **Long-running tasks**: Max 30s CPU time on paid tier, 10ms on free tier
+- ❌ **Native Node modules**: Many npm packages incompatible (check compatibility first)
+- ❌ **Stateful in-memory**: Workers are stateless (use KV or database)
+
+**AI Prompt Examples**:
+
+```
+❌ Bad: "Add a WebSocket endpoint for real-time chat"
+✅ Good: "Add a polling endpoint that checks for new messages every 5 seconds"
+
+❌ Bad: "Add file upload that saves to ./uploads folder"
+✅ Good: "Add file upload using Cloudflare R2 with presigned URLs"
+
+❌ Bad: "Add background job that processes videos"
+✅ Good: "Add webhook that triggers external video processing service"
+```
+
+### Template Design Decisions
+
+**What's Intentionally NOT Included**:
+
+- ❌ **Testing framework**: Focus is MVP speed (add tests when product validated)
+- ❌ **Error monitoring**: Add Axiom/Sentry when in production
+- ❌ **Payment processing**: Implementation varies per business model
+- ❌ **File uploads**: Requires R2 setup (add when needed)
+- ❌ **Multi-tenancy**: Single-org RBAC only (extend when needed)
+- ❌ **Internationalization**: English-only by default
+- ❌ **Advanced search**: PostgreSQL basic queries only
+
+**When AI Should Suggest Additions**:
+
+- ✅ User explicitly asks for these features
+- ✅ User is past MVP stage (mentions "production" or "paying customers")
+- ✅ User needs to scale (mentions performance issues or growth)
+
+**When AI Should Remind About Limitations**:
+
+```
+User: "Add real-time notifications"
+AI: "Cloudflare Workers don't support WebSocket. I can implement:
+1. Polling (simple, works on free tier)
+2. Server-Sent Events (one-way, real-time-ish)
+3. External service (Pusher, Ably)
+Which approach would you prefer?"
+```
+
+### Migration Paths to Suggest
+
+**When User Hits Limits**:
+
+```typescript
+// User: "Getting CPU time exceeded errors"
+// AI Response:
+// "You're hitting the 10ms CPU limit on Cloudflare Workers free tier.
+// Options:
+// 1. Upgrade to Workers Standard ($5/mo) → 30s CPU time
+// 2. Optimize queries (add indexes, reduce joins)
+// 3. Add caching (Cloudflare KV)
+// Which would you like to try first?"
+
+// User: "Need to add comprehensive testing"
+// AI Response:
+// "I'll add Vitest for testing. Let's start with critical paths:
+// 1. Authentication flows (login, signup)
+// 2. RBAC permission checks
+// 3. Server Actions
+// After these, we can expand coverage."
+```
+
+### Best Practices for AI Development
+
+**DO**:
+
+- ✅ Check `docs/LIMITATIONS.md` before suggesting features
+- ✅ Warn users about Cloudflare Workers constraints
+- ✅ Suggest incremental additions (don't over-engineer MVP)
+- ✅ Recommend testing/monitoring when user mentions "production"
+- ✅ Follow existing feature structure (`actions.ts`, `schema.ts`, etc.)
+
+**DON'T**:
+
+- ❌ Suggest WebSocket without mentioning limitations
+- ❌ Add testing framework unless explicitly requested
+- ❌ Suggest complex features that require paid services
+- ❌ Implement multi-tenancy without discussing trade-offs
+- ❌ Add dependencies without checking Workers compatibility
+
+### AI Decision Tree
+
+```
+User requests feature X
+├─ Is X compatible with Cloudflare Workers?
+│  ├─ NO → Suggest workaround or alternative
+│  └─ YES → Continue
+├─ Does X require testing/monitoring?
+│  ├─ YES + User is in production → Suggest adding
+│  └─ NO → Continue
+├─ Is X in scope of MVP template?
+│  ├─ NO → Explain it's intentionally excluded, offer to add
+│  └─ YES → Implement following conventions
+└─ Does X match existing feature structure?
+   ├─ NO → Ask user if they want to deviate from conventions
+   └─ YES → Implement
+```
+
+### Common User Questions & AI Responses
+
+**Q: "Why no tests?"**
+
+A: "This template optimizes for MVP speed. TypeScript + ESLint catch ~70% of bugs. You can add Vitest when you have paying customers. Want me to add testing now?"
+
+**Q: "How do I add real-time features?"**
+
+A: "Cloudflare Workers don't support WebSocket natively. Options:
+
+1. Polling (simple, works today)
+2. Server-Sent Events (one-way push)
+3. Supabase Real-time (recommended - see `docs/SUPABASE_INTEGRATION.md`)
+4. Durable Objects (complex, requires setup)
+5. External service (Pusher $10/mo)
+   Which fits your needs?"
+
+**Q: "App is slow, what do I optimize?"**
+
+A: "Let me check:
+
+1. Database queries (add indexes if > 50ms)
+2. CPU time usage (upgrade to paid tier if hitting limits)
+3. Caching (add KV for repeated queries)
+   Run: `pnpm typecheck && pnpm build` to check for issues."
+
+**Q: "Can I use this for [specific use case]?"**
+
+A: "Let me check against template constraints:
+
+- Cloudflare Workers compatible? [YES/NO]
+- Real-time needed? [YES/NO]
+- Heavy computation? [YES/NO]
+- Multi-tenancy needed? [YES/NO]
+  [Provide recommendation based on answers]"
+
+### Useful References for AI
+
+When user asks about limitations:
+
+- **Platform**: `docs/LIMITATIONS.md#cloudflare-workers-constraints`
+- **Testing**: `docs/LIMITATIONS.md#testing-infrastructure`
+- **Scaling**: `docs/LIMITATIONS.md#scaling-considerations`
+- **Migration**: `docs/LIMITATIONS.md#migration-paths`
+- **Features**: `docs/LIMITATIONS.md#feature-gaps-intentional`
+- **Real-time/Storage**: `docs/SUPABASE_INTEGRATION.md` (how to add with minimal changes)
+
+When user asks about adding features:
+
+- **Recipes**: `docs/recipes/` (step-by-step guides)
+- **Feature examples**: `src/features/blog/`, `src/features/contact/`
+- **Schema patterns**: `src/db/schema.ts` (with JSDoc)
+- **Architecture**: `docs/ARCHITECTURE.md`
+
 ## Resources for AI
 
 When AI works on this template, it has access to:

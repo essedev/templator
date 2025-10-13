@@ -3,13 +3,11 @@
   "main": ".open-next/worker.js",
   "name": "templator",
   "compatibility_date": "2025-04-01",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "keep_names": false,
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "vars": {
     "BETTER_AUTH_URL": "https://templator.essedev.it",
@@ -17,6 +15,6 @@
     "EMAIL_PROVIDER": "mock",
     "EMAIL_FROM": "noreply@templator.gen-8ae.workers.dev",
     "EMAIL_REPLY_TO": "support@templator.gen-8ae.workers.dev",
-    "ADMIN_EMAIL": "admin@templator.gen-8ae.workers.dev"
-  }
+    "ADMIN_EMAIL": "admin@templator.gen-8ae.workers.dev",
+  },
 }

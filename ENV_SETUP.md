@@ -17,6 +17,7 @@ Sistema semplificato per la gestione delle variabili d'ambiente.
 **File:** `.env.local` (gitignored)
 
 1. Copia il template:
+
    ```bash
    cp .env.example .env.local
    ```
@@ -49,7 +50,7 @@ Variabili **pubbliche** (URL, email, ecc.) sono in `wrangler.jsonc`:
     "EMAIL_PROVIDER": "mock",
     "EMAIL_FROM": "noreply@templator.gen-8ae.workers.dev",
     // ...
-  }
+  },
 }
 ```
 
@@ -95,13 +96,14 @@ Nessuna confusione, nessun file duplicato!
 
 ## 🎯 Come Funziona
 
-### Problema: NEXT_PUBLIC_* variables
+### Problema: NEXT*PUBLIC*\* variables
 
 Le variabili `NEXT_PUBLIC_*` vengono **embedded nel JavaScript** durante il build (che gira localmente).
 
 ### Soluzione: Script Intelligente
 
 Lo script `scripts/deploy.mjs`:
+
 - Legge `wrangler.jsonc` → `NEXT_PUBLIC_APP_URL`
 - Setta la variabile per il processo di build
 - Builda → Next.js embedded il valore corretto
@@ -111,10 +113,10 @@ Lo script `scripts/deploy.mjs`:
 
 ## 📝 Riepilogo
 
-| Cosa | Dove | Committato | Quando |
-|------|------|------------|--------|
-| **Secrets locali** | `.env.local` | ❌ No | `npm run dev` |
-| **Config pubblica prod** | `wrangler.jsonc` | ✅ Sì | `npm run deploy` |
-| **Secrets prod** | Wrangler CLI | ❌ No | Una tantum |
+| Cosa                     | Dove             | Committato | Quando           |
+| ------------------------ | ---------------- | ---------- | ---------------- |
+| **Secrets locali**       | `.env.local`     | ❌ No      | `npm run dev`    |
+| **Config pubblica prod** | `wrangler.jsonc` | ✅ Sì      | `npm run deploy` |
+| **Secrets prod**         | Wrangler CLI     | ❌ No      | Una tantum       |
 
 **Semplice, no?** 🎉

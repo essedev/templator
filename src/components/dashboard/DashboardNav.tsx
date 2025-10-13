@@ -1,14 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { hasPermission, type Permission } from "@/lib/permissions";
-import {
-  LayoutDashboard,
-  FileText,
-  Mail,
-  MessageSquare,
-  Users,
-  UserCircle,
-} from "lucide-react";
+import { LayoutDashboard, FileText, Mail, MessageSquare, Users, UserCircle } from "lucide-react";
 
 interface NavItem {
   label: string;
