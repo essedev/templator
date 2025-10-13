@@ -103,6 +103,45 @@ git push && git push --tags
 - **MINOR** (0.1.0): New features (backward-compatible)
 - **PATCH** (0.0.1): Bug fixes
 
+### `/deploy` - Deploy to Cloudflare
+
+Deploys the application to Cloudflare Workers with automatic build and configuration.
+
+**How it works:**
+
+1. Checks authentication with `npx wrangler whoami`
+2. Verifies secrets are configured (DATABASE_URL, BETTER_AUTH_SECRET)
+3. Shows deployment summary from `wrangler.jsonc`
+4. Runs `npm run deploy` which:
+   - Reads vars from wrangler.jsonc
+   - Builds with production variables
+   - Deploys to Cloudflare
+5. Shows live URL and monitoring options
+
+**When to use:** After testing locally and before/after creating a release.
+
+**Example workflow:**
+
+```bash
+# 1. Update changelog
+/changelog
+
+# 2. Create release
+/release
+
+# 3. Deploy to production
+/deploy
+```
+
+**First-time setup:** Configure secrets once:
+
+```bash
+echo "postgresql://..." | npx wrangler secret put DATABASE_URL
+openssl rand -base64 32 | npx wrangler secret put BETTER_AUTH_SECRET
+```
+
+See `ENV_SETUP.md` for complete environment configuration guide.
+
 ## Key Conventions
 
 ### File Naming

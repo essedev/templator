@@ -1,3 +1,7 @@
+---
+description: Analyze changes and update CHANGELOG.md
+---
+
 # Update Changelog
 
 Automatically analyze recent work and update CHANGELOG.md with comprehensive changes in the [Unreleased] section.

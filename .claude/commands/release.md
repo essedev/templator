@@ -1,3 +1,7 @@
+---
+description: Create and publish a new version release
+---
+
 # Create Release
 
 Automatically prepare and publish a new version release with full automation.

@@ -1,3 +1,7 @@
+---
+description: Deploy application to Cloudflare Workers
+---
+
 # Deploy to Cloudflare
 
 Automatically deploy the application to Cloudflare Workers.
