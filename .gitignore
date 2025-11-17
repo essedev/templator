@@ -15,8 +15,18 @@ out
 .open-next
 .wrangler
 
+# Editor
+.vscode
+
 # Drizzle
 drizzle
 
 # TypeScript
 *.tsbuildinfo
+
+# OS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
