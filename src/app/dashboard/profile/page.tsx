@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { EditProfileForm } from "@/features/profile/EditProfileForm";
 import { PageHeader } from "@/components/common";
 import { Shield, Mail, Calendar, Clock } from "lucide-react";
+import { formatFullDate, getDaysSince } from "@/lib/dates";
 
 /**
  * Dashboard profile page.
@@ -109,18 +110,9 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-2xl font-semibold">
-                {new Date(userData.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+              <p className="text-2xl font-semibold">{formatFullDate(userData.createdAt)}</p>
               <p className="text-sm text-muted-foreground">
-                {Math.floor(
-                  (Date.now() - new Date(userData.createdAt).getTime()) / (1000 * 60 * 60 * 24)
-                )}{" "}
-                days ago
+                {getDaysSince(userData.createdAt)} days ago
               </p>
             </div>
           </CardContent>
@@ -136,13 +128,7 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-2xl font-semibold">
-                {new Date(userData.updatedAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+              <p className="text-2xl font-semibold">{formatFullDate(userData.updatedAt)}</p>
               <p className="text-sm text-muted-foreground">Profile last updated</p>
             </div>
           </CardContent>

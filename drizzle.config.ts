@@ -1,4 +1,8 @@
 import { defineConfig } from "drizzle-kit";
+import { loadEnv } from "./src/lib/load-env";
+
+// Load .env.local consistently
+loadEnv();
 
 export default defineConfig({
   out: "./drizzle",

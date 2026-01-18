@@ -690,11 +690,11 @@ pnpm add stripe @stripe/stripe-js
 # - Instant resizing
 # - 100k images included
 
-# See recipe
-docs/recipes/add-file-uploads.md
+# See setup guide
+docs/R2_SETUP.md
 ```
 
-**Estimated Time**: 3-6 hours for full upload flow.
+**Estimated Time**: 30-60 minutes for basic upload flow.
 
 ### Email Marketing & Campaigns
 

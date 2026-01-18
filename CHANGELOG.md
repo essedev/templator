@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-01-18
+
+### Added
+
+- Cloudflare R2 storage client (`src/lib/r2-client.ts`) with presigned URLs for file uploads
+- R2 setup documentation (`docs/R2_SETUP.md`) with complete configuration guide
+- Date utilities (`src/lib/dates.ts`) for consistent date formatting across the app
+- Environment loader (`src/lib/load-env.ts`) for standalone scripts (drizzle-kit, tsx)
+- Claude Code commands aligned with plannerinator-next best practices:
+  - `/check` - Format, lint, build with proper fix guidelines (no eslint-disable hacks)
+  - `/ship` - Complete release workflow (check + changelog + release in one command)
+  - `/archive-changelog` - Archive old changelog versions when file exceeds 1000 lines
+- Commands documentation (`.claude/COMMANDS.md`) with detailed usage examples
+
+### Changed
+
+- Updated to Next.js 16.1.3, React 19.2.3, Better Auth 1.4.15, and 20+ other dependencies
+- Improved ESLint configuration for Next.js 16 compatibility (migrated from FlatCompat to direct imports)
+- Enhanced `/changelog` command with dependency update grouping (max 2-3 lines instead of listing all)
+- Enhanced `/release` command with changelog archive check reminder
+- Updated `.env.example` with R2 configuration variables (commented, optional)
+- Improved `PostForm` to use `useWatch` instead of `watch` for React Compiler compatibility
+- Improved `ThemeToggle` to use `startTransition` for hydration safety
+- Refactored profile page to use centralized date helper functions
+- Updated `drizzle.config.ts` to use `loadEnv()` for consistent environment loading
+
+### Fixed
+
+- Better Auth v1.4 compatibility: custom `forgetPassword` client implementation and updated `verify` signature
+- ESLint configuration error with Next.js 16 (circular structure in FlatCompat)
+- React Compiler warnings for impure functions (`Date.now()`) and setState in effects
+- Type safety improvements in auth types with explicit `AppUser` and `AppSession` interfaces
+
 ## [0.4.1] - 2025-10-22
 
 ### Fixed
@@ -214,6 +247,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AI workflow guide
   - Recipe patterns
 
+[0.5.0]: https://github.com/yourusername/templator/releases/tag/v0.5.0
 [0.4.1]: https://github.com/yourusername/templator/releases/tag/v0.4.1
 [0.4.0]: https://github.com/yourusername/templator/releases/tag/v0.4.0
 [0.3.1]: https://github.com/yourusername/templator/releases/tag/v0.3.1

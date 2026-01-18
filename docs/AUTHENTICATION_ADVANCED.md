@@ -139,34 +139,142 @@ This project uses **custom PBKDF2** implementation (`src/lib/password.ts`) becau
 - **Iterations:** 100,000 (OWASP recommended as of 2024)
 - **Salt:** 16 bytes (cryptographically random per password)
 - **Output:** 32 bytes derived key
-- **Storage format:** `salt:hash` (both hex-encoded)
+- **Storage format:** `iterations:salt:hash` (all hex-encoded)
 
-**Implementation:**
+#### Critical: Better Auth Configuration
+
+> **⚠️ IMPORTANT:** Custom password hashing functions **MUST** be configured inside `emailAndPassword`, **NOT** at the root level of the Better Auth config.
+
+```typescript
+// ✅ CORRECT - Inside emailAndPassword
+export const auth = betterAuth({
+  emailAndPassword: {
+    enabled: true,
+    password: {
+      hash: async (password) => await hashPassword(password),
+      verify: async ({ password, hash }) => await verifyPassword(password, hash),
+    },
+  },
+});
+
+// ❌ WRONG - At root level (will be IGNORED!)
+export const auth = betterAuth({
+  password: {
+    // This is IGNORED! Better Auth will use default scrypt instead.
+    hash: async (password) => await hashPassword(password),
+    verify: async ({ password, hash }) => await verifyPassword(password, hash),
+  },
+});
+```
+
+**Why this matters:** If placed at the root level, Better Auth silently ignores the custom hashing and uses its default scrypt algorithm. This causes:
+
+1. **Registration:** Passwords are hashed with scrypt (not PBKDF2)
+2. **Login:** Verification with PBKDF2 fails because hash format doesn't match
+3. **Result:** Users cannot log in after registering
+
+This is a common misconfiguration that's hard to debug because:
+
+- No error is thrown
+- Registration appears to work
+- Login silently fails with "invalid credentials"
+
+**Verification:** Check `src/lib/auth.ts` and ensure `password` config is inside `emailAndPassword`.
+
+#### Implementation Details
 
 ```typescript
 // src/lib/password.ts
+const ITERATIONS = 100000; // OWASP recommended minimum
+const HASH_LENGTH = 32; // 256 bits
+const SALT_LENGTH = 16; // 128 bits
+
 export async function hashPassword(password: string): Promise<string> {
+  // Generate random salt
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+
+  // Convert password to buffer
   const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
   const passwordBuffer = encoder.encode(password);
 
+  // Import key for PBKDF2
   const key = await crypto.subtle.importKey("raw", passwordBuffer, { name: "PBKDF2" }, false, [
     "deriveBits",
   ]);
 
-  const derivedBits = await crypto.subtle.deriveBits(
+  // Derive hash
+  const hashBuffer = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
       salt: salt,
-      iterations: 100000,
+      iterations: ITERATIONS,
       hash: "SHA-256",
     },
     key,
-    256 // 32 bytes
+    HASH_LENGTH * 8 // bits
   );
 
-  const hashArray = new Uint8Array(derivedBits);
-  return `${bufferToHex(salt)}:${bufferToHex(hashArray)}`;
+  // Format: iterations:salt:hash (all hex-encoded)
+  const hashHex = bufferToHex(new Uint8Array(hashBuffer));
+  const saltHex = bufferToHex(salt);
+  return `${ITERATIONS}:${saltHex}:${hashHex}`;
+}
+
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  // Parse stored hash
+  const [iterationsStr, saltHex, hashHex] = storedHash.split(":");
+  const iterations = parseInt(iterationsStr, 10);
+  const salt = hexToBuffer(saltHex);
+
+  // Derive hash with same parameters
+  const key = await crypto.subtle.importKey(/* ... */);
+  const computedHash = await crypto.subtle.deriveBits(/* ... */);
+
+  // Timing-safe comparison (prevents timing attacks)
+  return timingSafeEqual(computedHash, hashHex);
+}
+```
+
+#### Timing-Safe Comparison
+
+The `verifyPassword` function uses constant-time comparison to prevent timing attacks:
+
+```typescript
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+```
+
+**Why timing-safe?** Regular string comparison (`===`) returns early on first mismatch. An attacker can measure response time to guess characters one by one. Constant-time comparison always takes the same time regardless of where strings differ.
+
+#### Migrating from bcrypt
+
+If you have existing bcrypt passwords and need to migrate:
+
+```typescript
+// During login, check format and rehash if needed
+export async function verifyAndMigrate(password: string, storedHash: string): Promise<boolean> {
+  // Check if it's old bcrypt format (starts with $2)
+  if (storedHash.startsWith("$2")) {
+    // Verify with bcrypt (requires bcrypt package)
+    const bcryptValid = await bcrypt.compare(password, storedHash);
+    if (bcryptValid) {
+      // Rehash with PBKDF2 and update database
+      const newHash = await hashPassword(password);
+      // await updateUserPassword(userId, newHash);
+      return true;
+    }
+    return false;
+  }
+
+  // New PBKDF2 format
+  return verifyPassword(password, storedHash);
 }
 ```
 

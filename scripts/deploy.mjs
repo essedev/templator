@@ -19,7 +19,7 @@ console.log("🚀 Starting Cloudflare deployment...\n");
 console.log("📖 Reading wrangler.jsonc...");
 const wranglerContent = readFileSync("./wrangler.jsonc", "utf-8");
 
-// Simple JSONC parser: remove // comments and /* */ comments
+// Simple JSONC parser: remove // comments, /* */ comments, and trailing commas
 const jsonContent = wranglerContent
   .split("\n")
   .map((line) => {
@@ -37,7 +37,8 @@ const jsonContent = wranglerContent
     return line;
   })
   .join("\n")
-  .replace(/\/\*[\s\S]*?\*\//g, ""); // Remove /* */ comments
+  .replace(/\/\*[\s\S]*?\*\//g, "") // Remove /* */ comments
+  .replace(/,(\s*[}\]])/g, "$1"); // Remove trailing commas
 
 const wranglerConfig = JSON.parse(jsonContent);
 

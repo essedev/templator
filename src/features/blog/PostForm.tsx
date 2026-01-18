@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -31,7 +31,7 @@ export function PostForm({ mode, postId, defaultValues }: PostFormProps) {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
+    control,
   } = useForm<CreatePostInput>({
     resolver: zodResolver(createPostSchema),
     defaultValues: defaultValues || {
@@ -39,7 +39,8 @@ export function PostForm({ mode, postId, defaultValues }: PostFormProps) {
     },
   });
 
-  const published = watch("published");
+  // useWatch is React Compiler-friendly (unlike watch)
+  const published = useWatch({ control, name: "published" });
 
   const onSubmit = async (data: CreatePostInput) => {
     setIsSubmitting(true);

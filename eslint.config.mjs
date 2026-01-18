@@ -1,30 +1,22 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextConfig from "eslint-config-next";
+import nextTypeScriptConfig from "eslint-config-next/typescript";
 
 const eslintConfig = [
+  // Next.js base config
+  ...nextConfig,
+  // Next.js TypeScript config
+  ...nextTypeScriptConfig,
+  // Custom ignores (extends Next.js defaults)
   {
     ignores: [
-      "node_modules/**",
-      ".next/**",
       ".open-next/**",
       ".wrangler/**",
-      "out/**",
-      "build/**",
       "drizzle/**",
-      "next-env.d.ts",
       "cloudflare-env.d.ts",
       "tsconfig.tsbuildinfo",
     ],
   },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // Custom rules
   {
     rules: {
       // Disable unescaped entities rule - apostrophes are safe in JSX text
